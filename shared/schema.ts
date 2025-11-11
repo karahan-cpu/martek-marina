@@ -63,6 +63,9 @@ export const insertPedestalSchema = createInsertSchema(pedestals).omit({
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
+}).extend({
+  startDate: z.union([z.string(), z.date()]).transform(val => typeof val === 'string' ? new Date(val) : val),
+  endDate: z.union([z.string(), z.date()]).transform(val => typeof val === 'string' ? new Date(val) : val),
 });
 
 export const insertServiceRequestSchema = createInsertSchema(serviceRequests).omit({

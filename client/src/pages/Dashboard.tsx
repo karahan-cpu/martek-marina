@@ -17,10 +17,14 @@ export default function Dashboard() {
     queryKey: ["/api/bookings"],
   });
 
+  const { data: serviceRequests } = useQuery<any[]>({
+    queryKey: ["/api/service-requests"],
+  });
+
   const activePedestals = pedestals?.filter(p => p.status === "occupied").length || 0;
   const totalWaterUsage = pedestals?.reduce((sum, p) => sum + p.waterUsage, 0) || 0;
   const totalElectricityUsage = pedestals?.reduce((sum, p) => sum + p.electricityUsage, 0) || 0;
-  const pendingRequests = 0;
+  const pendingRequests = serviceRequests?.filter(r => r.status === "pending").length || 0;
 
   return (
     <div className="min-h-screen bg-background">

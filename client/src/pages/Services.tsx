@@ -42,6 +42,13 @@ export default function Services() {
         description: "Your service request has been submitted successfully.",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Submission Failed",
+        description: error?.message || "Failed to submit request. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSubmit = () => {
@@ -141,14 +148,14 @@ export default function Services() {
             <div className="space-y-3">
               <Label>Urgency Level</Label>
               <RadioGroup value={urgency} onValueChange={setUrgency}>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="normal" id="normal" data-testid="radio-normal" />
+                <div className="flex items-center gap-2 min-h-[44px]">
+                  <RadioGroupItem value="normal" id="normal" data-testid="radio-normal" className="min-w-[44px] min-h-[44px]" />
                   <Label htmlFor="normal" className="cursor-pointer">
                     Normal - Can wait for regular service
                   </Label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="urgent" id="urgent" data-testid="radio-urgent" />
+                <div className="flex items-center gap-2 min-h-[44px]">
+                  <RadioGroupItem value="urgent" id="urgent" data-testid="radio-urgent" className="min-w-[44px] min-h-[44px]" />
                   <Label htmlFor="urgent" className="cursor-pointer">
                     Urgent - Requires immediate attention
                   </Label>

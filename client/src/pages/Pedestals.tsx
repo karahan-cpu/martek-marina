@@ -22,8 +22,9 @@ export default function Pedestals() {
     mutationFn: async (data: { id: string; waterEnabled?: boolean; electricityEnabled?: boolean }) => {
       return apiRequest("PATCH", `/api/pedestals/${data.id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (updatedPedestal) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pedestals"] });
+      setSelectedPedestal(updatedPedestal as Pedestal);
     },
   });
 
@@ -43,6 +44,7 @@ export default function Pedestals() {
   };
 
   const getStatusLabel = (status: string) => {
+    if (!status || typeof status !== 'string') return 'Unknown';
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 

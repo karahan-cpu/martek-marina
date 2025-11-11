@@ -46,6 +46,13 @@ export default function Bookings() {
         description: "Your berth booking has been confirmed successfully.",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Booking Failed",
+        description: error?.message || "Failed to create booking. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleCreateBooking = () => {
@@ -53,6 +60,15 @@ export default function Bookings() {
       toast({
         title: "Missing Information",
         description: "Please select dates and a pedestal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (endDate <= startDate) {
+      toast({
+        title: "Invalid Date Range",
+        description: "End date must be after start date.",
         variant: "destructive",
       });
       return;
@@ -154,23 +170,25 @@ export default function Bookings() {
             <div className="space-y-3">
               <Label>Services Required</Label>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-h-[44px]">
                   <Checkbox
                     id="water-service"
                     checked={needsWater}
                     onCheckedChange={(checked) => setNeedsWater(checked as boolean)}
                     data-testid="checkbox-water-service"
+                    className="min-w-[44px] min-h-[44px]"
                   />
                   <Label htmlFor="water-service" className="cursor-pointer">
                     Water Service
                   </Label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-h-[44px]">
                   <Checkbox
                     id="electricity-service"
                     checked={needsElectricity}
                     onCheckedChange={(checked) => setNeedsElectricity(checked as boolean)}
                     data-testid="checkbox-electricity-service"
+                    className="min-w-[44px] min-h-[44px]"
                   />
                   <Label htmlFor="electricity-service" className="cursor-pointer">
                     Electricity Service
