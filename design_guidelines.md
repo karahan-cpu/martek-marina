@@ -1,153 +1,198 @@
-# Marina Smart Pedestal App - Design Guidelines
+# Marina Berth Booking App - Design Guidelines
 
 ## Design Approach
-**System-Based Approach**: Material Design principles adapted for maritime/utility contexts, optimized for mobile-first usage with clear functional hierarchy and touch-friendly controls.
+**Reference-Based Approach**: Drawing inspiration from premium booking platforms (Airbnb, Booking.com, luxury hotel apps) with a maritime aesthetic. Booking-first philosophy with minimal, sophisticated interfaces emphasizing trust, clarity, and effortless navigation.
 
-**Rationale**: This is a utility-focused marina management application where efficiency, clarity, and reliability are paramount. Users need quick access to pedestal controls, real-time monitoring, and service management in outdoor/marina environments.
+**Rationale**: This is a premium marina berth booking application where the booking experience is paramount. Users expect a high-end, frictionless process similar to luxury accommodation booking, with emphasis on visual appeal, trust signals, and streamlined workflows.
 
 ---
 
 ## Typography
 
-**Primary Font**: Inter or Roboto (via Google Fonts CDN)
-- Headers (H1): 28px, semibold - Main screen titles
-- Headers (H2): 22px, semibold - Section headers
-- Headers (H3): 18px, medium - Card titles, pedestal names
-- Body Large: 16px, regular - Primary content, metrics
-- Body: 14px, regular - Secondary information, descriptions
-- Caption: 12px, regular - Timestamps, status labels
+**Primary Font**: Plus Jakarta Sans (via Google Fonts CDN)
+- H1: 36px, bold - Page titles, hero headlines
+- H2: 28px, semibold - Section headers
+- H3: 22px, semibold - Card titles, step headers
+- H4: 18px, medium - Subsection titles
+- Body Large: 18px, regular - Primary content, important info
+- Body: 16px, regular - Standard content, form labels
+- Body Small: 14px, regular - Secondary info, captions
 
-**Accent Font**: DM Sans (for Martek branding elements)
-- Used sparingly for company name and special CTAs
+**Accent Font**: DM Sans (for subtle differentiation in CTAs and premium badges)
 
 ---
 
 ## Layout System
 
-**Spacing Units**: Tailwind primitives of 2, 4, 6, 8, 12, 16, 20
-- Component padding: p-4, p-6
-- Section spacing: space-y-6, space-y-8
-- Card gaps: gap-4, gap-6
-- Touch targets: minimum h-12, w-12
+**Spacing Units**: Tailwind primitives of 4, 6, 8, 12, 16, 24
+- Page padding: px-6 mobile, px-8 tablet+
+- Section spacing: space-y-12 to space-y-16
+- Card gaps: gap-6, gap-8
+- Component padding: p-6, p-8 for cards
+- Generous whitespace throughout for premium feel
 
 **Container Strategy**:
-- Mobile-first: Full-width with px-4 horizontal padding
-- Max-width: max-w-7xl for dashboard views
-- Cards: Consistent rounded-xl corners with shadow-md elevation
+- Content: max-w-6xl centered with mx-auto
+- Booking wizard: max-w-3xl for focused flow
+- Full-width hero sections with inner containers
 
 ---
 
 ## Core Components
 
 ### Navigation
-**Bottom Tab Bar** (sticky, mobile-optimized):
-- 5 primary tabs: Dashboard, Pedestals, Bookings, Services, Profile
-- Active state with icon fill + label weight change
-- Icon size: 24px with 8px label spacing
+**Top Navigation Bar** (sticky, translucent backdrop):
+- Logo left (Martek wordmark, 140px)
+- Center: minimal nav links (Home, Marinas, My Bookings, Services)
+- Right: Account avatar (40px) + dropdown
+- Mobile: Hamburger menu with slide-out drawer
+- Height: h-20 with shadow-sm when scrolled
 
-### Dashboard (Home Screen)
+### Home/Landing Page
 **Hero Section**:
-- Martek branded header with company logo (120px width)
-- "Quick Actions" card grid (2-column on mobile, 4-column on tablet+)
-- Advertisement banner slot (300x100 aspect ratio)
+- Full-width hero image: Luxury marina sunset/yacht scene (h-[600px])
+- Overlay with gradient (navy to transparent)
+- Centered headline: "Your Perfect Berth Awaits"
+- Booking search widget: Floating card (blurred background) with marina selector, dates (calendar picker), boat details, and primary CTA
+- Widget button with blurred backdrop-blur-lg background
 
-**Status Overview Cards**:
-- 2-column grid showing: Active Pedestals, Water Usage, Power Usage, Pending Requests
-- Each card: Icon (32px) + Large metric + Label + Trend indicator
-- Iconography from Heroicons
+**Featured Marinas Section**:
+- 3-column grid (mobile: 1-col)
+- Large cards: Marina image (300x200), name, location, amenities icons, "View Availability" link
+- Cards with rounded-2xl, shadow-lg on hover
 
-### Smart Pedestal Control
-**Pedestal List View**:
-- Vertical scrolling cards with pedestal identifier, status badge, and action buttons
-- Status indicators: Available (green), Occupied (blue), Maintenance (amber), Offline (gray)
-- Each card includes: Berth number (large), boat name (if occupied), service toggles
+**Trust Indicators**:
+- 4-column stats: Total Berths, Marinas, Happy Boaters, Years of Service
+- Large numbers (48px) with icons
+- Subtle separator lines
 
-**Individual Pedestal Panel**:
-- Full-screen modal with pedestal details
-- Service toggles (water/electricity) with ON/OFF states - 56px height for easy tapping
-- Real-time consumption meters with circular progress indicators
-- Service cost calculator showing current session charges
+**How It Works**:
+- 3-step visual process (icons + descriptions)
+- Timeline connector between steps
+- Booking wizard preview screenshot
 
-### Berth Map
-**Interactive Marina Layout**:
-- SVG-based marina map with labeled berths
-- Color-coded pedestal status visualization
-- Pinch-to-zoom capability
-- Tap pedestal to open control panel
+### Booking Wizard (Multi-Step Flow)
+**Step Container**:
+- max-w-3xl centered
+- Progress indicator: Linear stepper at top (Step 1/4)
+- Each step in white card with rounded-2xl, p-8
 
-### Booking Interface
-**Calendar Picker**:
-- Month view calendar with availability indicators
-- Date range selection for multi-day bookings
-- Time slot picker (scrollable list, 1-hour increments)
-- Pedestal selection dropdown with filtered availability
+**Step 1 - Select Marina & Dates**:
+- Marina selection: Large image cards in grid
+- Date range picker: Calendar component (inline, large touch targets)
+- Duration calculator showing nights
 
-**Booking Summary Card**:
-- Selected dates, pedestal number, estimated cost
-- Service preferences checkboxes (water/electricity)
-- Confirmation CTA button (full-width, h-14)
+**Step 2 - Choose Berth**:
+- Interactive marina map SVG with available berths highlighted
+- Berth list view toggle option
+- Berth cards: Number, dimensions, amenities icons, price/night
+- Comparison checkboxes for up to 3 berths
 
-### Advertisement Integration
-**Banner Placements**:
-- Dashboard top: 320x100 banner after hero
-- Pedestal list: Interstitial every 5 items (300x250)
-- Booking flow: Bottom sticky banner (320x50)
-- Profile: Single banner before usage history
+**Step 3 - Services & Add-ons**:
+- Service cards: Electricity, water, wifi, waste disposal
+- Toggle switches (h-12) with pricing
+- Premium services section: Concierge, maintenance, provisioning
 
-**Ad Container Styling**: Subtle gray border, labeled "Advertisement" caption, rounded-lg corners
+**Step 4 - Review & Pay**:
+- Booking summary sidebar (sticky on scroll)
+- Guest details form (name, boat registration, phone)
+- Payment method selector with card input
+- Total cost breakdown with daily rate, services, taxes
+- "Confirm Booking" CTA (full-width, h-14)
 
-### Service Request Form
-**Form Layout**:
-- Request type dropdown (Maintenance, Technical, General)
-- Pedestal/berth number input with autocomplete
-- Description textarea (4 rows minimum)
-- Photo upload button with preview thumbnails
-- Urgency selector (Normal/Urgent radio buttons)
-- Submit button (full-width, primary color)
+**Navigation**: "Back" and "Continue" buttons anchored at bottom (sticky), adequate spacing from content
 
-### User Profile
-**Profile Header**:
-- User avatar (96px circular) + Name + Membership tier
-- "Edit Profile" link (top-right)
+### My Bookings Dashboard
+**Upcoming Bookings**:
+- Timeline view with cards showing: Marina image thumbnail, dates, berth number, QR code for check-in
+- Status badges: Confirmed, Pending Payment, Checked In
+- Quick actions: Modify, Cancel, Contact Marina
 
-**Boat Information Card**:
-- Boat name, type, length, registration
-- Quick edit icon button
+**Past Bookings**:
+- Condensed list view
+- "Book Again" quick action button
+- Review/rating prompt for completed stays
 
-**Usage History**:
-- Tabular list of past bookings
-- Each row: Date, pedestal, duration, cost
-- "View Details" expandable sections
+**Booking Detail View**:
+- Full-screen modal
+- Hero image of marina
+- All booking details, services, costs
+- Digital check-in instructions
+- Marina contact card
+- Cancellation policy accordion
+
+### Marina Services
+**Service Categories**:
+- Card grid: Boat Maintenance, Provisioning, Concierge, Storage
+- Each card: Icon (48px), title, description, "Learn More" link
+
+**Service Detail Pages**:
+- Hero image specific to service
+- Service description
+- Pricing table
+- Request service form: Date, service type, special instructions
+- "Book Service" CTA
+
+### Account Portal
+**Profile Section**:
+- Large avatar (120px) with edit overlay
+- User info fields: Name, email, phone (editable inline)
+- Boat profiles: Multiple boats supported, each with name, type, length, registration
+
+**Payment Methods**:
+- Saved cards display (last 4 digits, card brand icon)
+- Add payment method modal
+- Set default payment toggle
+
+**Preferences**:
+- Notification settings toggles
+- Language/currency selector
+- Newsletter subscription checkbox
+
+**Documents**:
+- Insurance papers upload
+- Boat registration documents
+- Download booking confirmations
 
 ---
 
 ## Visual Elements
 
-**Cards**: All content in elevated cards with rounded-xl, shadow-md, bg-white
-**Buttons**: 
-- Primary: h-12, rounded-lg, font-medium
-- Secondary: h-10, rounded-lg, border variant
-- Icon buttons: h-10 w-10, rounded-full
+**Buttons**:
+- Primary: h-14, rounded-xl, font-semibold, text-lg
+- Secondary: h-12, rounded-xl, border-2, font-medium
+- Text links: Underline on hover, ocean blue color
+- Icon buttons: h-12 w-12, rounded-full
 
-**Status Badges**: Pill-shaped (rounded-full), 8px padding horizontal, uppercase text-xs
-**Dividers**: 1px borders between major sections in lists
-**Loading States**: Skeleton screens with pulse animation for data fetching
+**Cards**: rounded-2xl, shadow-md (hover: shadow-xl transition), bg-white, overflow-hidden for images
+**Status Badges**: rounded-full, px-4 py-1.5, font-medium text-sm, uppercase tracking-wide
+**Form Inputs**: h-12, rounded-lg, border-2, focus:border-ocean-blue
+**Dividers**: 2px borders, subtle gray, used sparingly
 
 ---
 
 ## Images
 
-**Hero Image**: Optional subtle maritime background (boats/marina) with 40% opacity overlay for Martek branding section
-**Profile Avatars**: User and boat placeholder images
-**Advertisement Slots**: Dynamic content from ad network
-**Icon Library**: Heroicons (outline for inactive, solid for active states)
+**Hero Images Required**:
+- Homepage: Luxury marina at sunset with yachts (1920x600), overlay gradient
+- Marina detail pages: Aerial view of specific marina (1920x500)
+- Service pages: Service-specific imagery (maintenance, provisioning)
+
+**Supporting Images**:
+- Marina cards: Thumbnail images (400x300) of each marina
+- Berth visualization: Optional berth layout diagrams
+- Profile: User avatar placeholder, boat images
+
+**Image Treatment**: All images use subtle rounded corners (rounded-xl), lazy loading, proper aspect ratios maintained
 
 ---
 
 ## Accessibility
 
-- Minimum touch targets: 44x44px
-- High contrast status indicators (WCAG AA compliant)
-- Clear focus states on all interactive elements (2px outline)
-- Semantic HTML with proper ARIA labels for toggles and controls
-- Font sizes never below 14px for body text
+- Touch targets minimum 44x44px throughout
+- High contrast maintained on all text (navy on white meets WCAG AAA)
+- Keyboard navigation for entire booking flow
+- Focus indicators: 3px ocean blue ring on interactive elements
+- Screen reader labels on all form inputs and icons
+- Large font sizes (16px minimum) for readability
+- Clear error states with icons and descriptive messages

@@ -10,21 +10,24 @@ import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
 import Profile from "@/pages/Profile";
 import Map from "@/pages/Map";
-import BottomNav from "@/components/BottomNav";
+import { TopNavBar } from "@/components/TopNavBar";
 
 function Router() {
   return (
-    <div className="pb-20">
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/pedestals" component={Pedestals} />
-        <Route path="/map" component={Map} />
-        <Route path="/bookings" component={Bookings} />
-        <Route path="/services" component={Services} />
-        <Route path="/profile" component={Profile} />
-        <Route component={NotFound} />
-      </Switch>
-      <BottomNav />
+    <div className="min-h-screen flex flex-col">
+      <TopNavBar />
+      <main className="flex-1">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/marinas" component={Pedestals} />
+          <Route path="/pedestals" component={Pedestals} />
+          <Route path="/map" component={Map} />
+          <Route path="/bookings" component={Bookings} />
+          <Route path="/services" component={Services} />
+          <Route path="/profile" component={Profile} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
     </div>
   );
 }
