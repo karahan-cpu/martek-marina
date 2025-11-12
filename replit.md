@@ -51,18 +51,33 @@ Preferred communication style: Simple, everyday language.
 - Middleware for request logging and JSON body parsing
 - Raw body capture for potential webhook integrations
 
-**Data Storage Strategy**: In-memory storage (MemStorage class) with interface-based design
-- Implements IStorage interface allowing future database migration
-- Current implementation uses Map data structures for users, pedestals, bookings, and service requests
-- Sample data initialization for development/demo purposes
+**Authentication**: Replit Auth (OpenID Connect) integration
+- Secure user authentication via OIDC protocol
+- Session management using PostgreSQL-backed session store
+- Automatic user profile creation/update on login
+- Graceful 401 handling for unauthenticated requests
+- Landing page for logged-out users, authenticated app for logged-in users
+
+**Data Storage Strategy**: PostgreSQL database with DatabaseStorage class
+- Migrated from in-memory to persistent database storage (November 2025)
+- Implements IStorage interface for clean separation of concerns
+- Uses Drizzle ORM for type-safe database operations
+- Database tables: users, sessions, pedestals, bookings, serviceRequests
+- Session persistence via connect-pg-simple for Replit Auth
 
 **API Endpoints**:
-- `/api/pedestals` - GET (list), POST (create)
-- `/api/pedestals/:id` - GET (single), PATCH (update)
-- `/api/bookings` - GET (list), POST (create)
-- `/api/bookings/:id` - PATCH (update)
-- `/api/service-requests` - GET (list), POST (create)
-- `/api/service-requests/:id` - PATCH (update)
+- **Authentication**:
+  - `/api/login` - Initiates OIDC login flow
+  - `/api/logout` - Logs out and redirects to OIDC provider logout
+  - `/api/callback` - OIDC callback endpoint for authentication completion
+  - `/api/auth/user` - Returns current authenticated user (401 if not logged in)
+- **Data Operations**:
+  - `/api/pedestals` - GET (list), POST (create)
+  - `/api/pedestals/:id` - GET (single), PATCH (update)
+  - `/api/bookings` - GET (list), POST (create)
+  - `/api/bookings/:id` - PATCH (update)
+  - `/api/service-requests` - GET (list), POST (create)
+  - `/api/service-requests/:id` - PATCH (update)
 
 **Data Validation**: Zod schemas with Drizzle integration
 - Schema definitions provide type safety and runtime validation
@@ -72,8 +87,10 @@ Preferred communication style: Simple, everyday language.
 
 **Core Entities**:
 
-1. **Users**: Marina customers with boat information
-   - Fields: username, password, fullName, boatName, boatType, boatLength, boatRegistration
+1. **Users**: Authenticated marina customers (populated via Replit Auth)
+   - Fields: id (OIDC sub claim), email, firstName, lastName, profileImageUrl
+   - Users are automatically created/updated on login via OIDC claims
+   - No password field - authentication handled by Replit Auth
 
 2. **Pedestals**: Smart utility distribution points
    - Fields: berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY
