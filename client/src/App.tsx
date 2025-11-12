@@ -10,7 +10,9 @@ import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
 import Profile from "@/pages/Profile";
 import Map from "@/pages/Map";
+import Landing from "@/pages/Landing";
 import { TopNavBar } from "@/components/TopNavBar";
+import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
   return (
@@ -32,12 +34,33 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return <Router />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );

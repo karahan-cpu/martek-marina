@@ -12,10 +12,24 @@ import {
 import { Menu, User, Calendar, Ship, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 export function TopNavBar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
+
+  const getInitials = () => {
+    if (!user) return "U";
+    const firstInitial = user.firstName?.[0] || "";
+    const lastInitial = user.lastName?.[0] || "";
+    return (firstInitial + lastInitial).toUpperCase() || "U";
+  };
+
+  const getFullName = () => {
+    if (!user) return "User";
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+  };
 
   const navItems = [
     { label: "Home", path: "/" },
@@ -66,7 +80,7 @@ export function TopNavBar() {
               >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary text-primary-foreground text-base font-semibold">
-                    CS
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -74,29 +88,34 @@ export function TopNavBar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-base font-semibold">Captain Smith</p>
-                  <p className="text-sm text-muted-foreground">captain@example.com</p>
+                  <p className="text-base font-semibold">{getFullName()}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <Link href="/profile">
-                <DropdownMenuItem data-testid="menu-profile">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/bookings">
-                <DropdownMenuItem data-testid="menu-bookings">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>My Bookings</span>
-                </DropdownMenuItem>
-              </Link>
+              <DropdownMenuItem 
+                data-testid="menu-profile"
+                onClick={() => setLocation("/profile")}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                data-testid="menu-bookings"
+                onClick={() => setLocation("/bookings")}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>My Bookings</span>
+              </DropdownMenuItem>
               <DropdownMenuItem data-testid="menu-settings">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem data-testid="menu-logout">
+              <DropdownMenuItem 
+                data-testid="menu-logout"
+                onClick={() => window.location.href = "/api/logout"}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log Out</span>
               </DropdownMenuItem>
@@ -122,12 +141,12 @@ export function TopNavBar() {
               <div className="flex items-center gap-3 px-2">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                    CS
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">Captain Smith</p>
-                  <p className="text-sm text-muted-foreground">View Profile</p>
+                  <p className="font-semibold">{getFullName()}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
                 </div>
               </div>
 
@@ -171,6 +190,7 @@ export function TopNavBar() {
                   variant="ghost"
                   className="w-full justify-start h-12 text-destructive"
                   data-testid="mobile-menu-logout"
+                  onClick={() => window.location.href = "/api/logout"}
                 >
                   <LogOut className="mr-2 h-5 w-5" />
                   Log Out

@@ -1,166 +1,139 @@
-import { 
-  type User, 
-  type InsertUser,
+// Database storage for Replit Auth and marina application
+// Reference: Replit Auth blueprint
+import {
+  users,
+  pedestals,
+  bookings,
+  serviceRequests,
+  type User,
+  type UpsertUser,
   type Pedestal,
   type InsertPedestal,
   type Booking,
   type InsertBooking,
   type ServiceRequest,
-  type InsertServiceRequest
+  type InsertServiceRequest,
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
+  // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
+  // Pedestal operations
   getPedestals(): Promise<Pedestal[]>;
   getPedestal(id: string): Promise<Pedestal | undefined>;
   createPedestal(pedestal: InsertPedestal): Promise<Pedestal>;
   updatePedestal(id: string, pedestal: Partial<InsertPedestal>): Promise<Pedestal | undefined>;
 
+  // Booking operations
   getBookings(): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: string, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
 
+  // Service request operations
   getServiceRequests(): Promise<ServiceRequest[]>;
   getServiceRequest(id: string): Promise<ServiceRequest | undefined>;
   createServiceRequest(request: InsertServiceRequest): Promise<ServiceRequest>;
   updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private pedestals: Map<string, Pedestal>;
-  private bookings: Map<string, Booking>;
-  private serviceRequests: Map<string, ServiceRequest>;
-
-  constructor() {
-    this.users = new Map();
-    this.pedestals = new Map();
-    this.bookings = new Map();
-    this.serviceRequests = new Map();
-    this.initializeSampleData();
-  }
-
-  private initializeSampleData() {
-    const samplePedestals: InsertPedestal[] = [
-      { berthNumber: "A-101", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 100, locationY: 100 },
-      { berthNumber: "A-102", status: "occupied", waterEnabled: true, electricityEnabled: true, waterUsage: 245, electricityUsage: 12, currentUserId: "demo-user-id", locationX: 150, locationY: 100 },
-      { berthNumber: "A-103", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 200, locationY: 100 },
-      { berthNumber: "B-201", status: "occupied", waterEnabled: true, electricityEnabled: false, waterUsage: 180, electricityUsage: 0, currentUserId: "demo-user-id", locationX: 100, locationY: 200 },
-      { berthNumber: "B-202", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 150, locationY: 200 },
-      { berthNumber: "B-203", status: "maintenance", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 200, locationY: 200 },
-      { berthNumber: "C-301", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 100, locationY: 300 },
-      { berthNumber: "C-302", status: "offline", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 150, locationY: 300 },
-      { berthNumber: "C-303", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 200, locationY: 300 },
-      { berthNumber: "D-401", status: "available", waterEnabled: false, electricityEnabled: false, waterUsage: 0, electricityUsage: 0, currentUserId: null, locationX: 100, locationY: 400 },
-    ];
-
-    samplePedestals.forEach((p) => {
-      const id = randomUUID();
-      this.pedestals.set(id, { ...p, id });
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
+  // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Pedestal operations
   async getPedestals(): Promise<Pedestal[]> {
-    return Array.from(this.pedestals.values());
+    return await db.select().from(pedestals);
   }
 
   async getPedestal(id: string): Promise<Pedestal | undefined> {
-    return this.pedestals.get(id);
+    const [pedestal] = await db.select().from(pedestals).where(eq(pedestals.id, id));
+    return pedestal;
   }
 
   async createPedestal(insertPedestal: InsertPedestal): Promise<Pedestal> {
-    const id = randomUUID();
-    const pedestal: Pedestal = { ...insertPedestal, id };
-    this.pedestals.set(id, pedestal);
+    const [pedestal] = await db.insert(pedestals).values(insertPedestal).returning();
     return pedestal;
   }
 
   async updatePedestal(id: string, update: Partial<InsertPedestal>): Promise<Pedestal | undefined> {
-    const pedestal = this.pedestals.get(id);
-    if (!pedestal) return undefined;
-
-    const updated = { ...pedestal, ...update };
-    this.pedestals.set(id, updated);
-    return updated;
+    const [pedestal] = await db
+      .update(pedestals)
+      .set(update)
+      .where(eq(pedestals.id, id))
+      .returning();
+    return pedestal;
   }
 
+  // Booking operations
   async getBookings(): Promise<Booking[]> {
-    return Array.from(this.bookings.values());
+    return await db.select().from(bookings);
   }
 
   async getBooking(id: string): Promise<Booking | undefined> {
-    return this.bookings.get(id);
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    return booking;
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    const id = randomUUID();
-    const booking: Booking = { 
-      ...insertBooking, 
-      id,
-      createdAt: new Date(),
-    };
-    this.bookings.set(id, booking);
+    const [booking] = await db.insert(bookings).values(insertBooking).returning();
     return booking;
   }
 
   async updateBooking(id: string, update: Partial<InsertBooking>): Promise<Booking | undefined> {
-    const booking = this.bookings.get(id);
-    if (!booking) return undefined;
-
-    const updated = { ...booking, ...update };
-    this.bookings.set(id, updated);
-    return updated;
+    const [booking] = await db
+      .update(bookings)
+      .set(update)
+      .where(eq(bookings.id, id))
+      .returning();
+    return booking;
   }
 
+  // Service request operations
   async getServiceRequests(): Promise<ServiceRequest[]> {
-    return Array.from(this.serviceRequests.values());
+    return await db.select().from(serviceRequests);
   }
 
   async getServiceRequest(id: string): Promise<ServiceRequest | undefined> {
-    return this.serviceRequests.get(id);
+    const [request] = await db.select().from(serviceRequests).where(eq(serviceRequests.id, id));
+    return request;
   }
 
   async createServiceRequest(insertRequest: InsertServiceRequest): Promise<ServiceRequest> {
-    const id = randomUUID();
-    const request: ServiceRequest = { 
-      ...insertRequest, 
-      id,
-      createdAt: new Date(),
-    };
-    this.serviceRequests.set(id, request);
+    const [request] = await db.insert(serviceRequests).values(insertRequest).returning();
     return request;
   }
 
   async updateServiceRequest(id: string, update: Partial<InsertServiceRequest>): Promise<ServiceRequest | undefined> {
-    const request = this.serviceRequests.get(id);
-    if (!request) return undefined;
-
-    const updated = { ...request, ...update };
-    this.serviceRequests.set(id, updated);
-    return updated;
+    const [request] = await db
+      .update(serviceRequests)
+      .set(update)
+      .where(eq(serviceRequests.id, id))
+      .returning();
+    return request;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
