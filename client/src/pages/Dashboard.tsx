@@ -209,7 +209,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Total Cost</span>
                         <span className="text-lg font-bold text-primary" data-testid={`text-cost-${booking.id}`}>
-                          ${booking.estimatedCost.toFixed(2)}
+                          ${(booking.estimatedCost / 100).toFixed(2)}
                         </span>
                       </div>
                     </div>

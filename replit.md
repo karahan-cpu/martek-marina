@@ -1,15 +1,16 @@
-# Marina Smart Pedestal Management System
+# Martek Marina - Premium Berth Booking Platform
 
 ## Overview
 
-This is a marina management application built for Martek, designed to help marina operators and boat owners manage berth services, monitor smart pedestals (water and electricity distribution points), create bookings, and submit service requests. The system provides real-time control and monitoring of marina utilities through a mobile-first web interface.
+This is a premium marina berth booking application built for Martek (www.martek.com.tr), designed with a D-Marin-inspired booking-first interface. The platform enables boat owners to easily book berths at Martek's marina facilities, manage their reservations, and access marina services through a clean, professional web interface.
 
-The application serves as a utility-focused platform where users can:
-- Monitor and control water/electricity at individual pedestal locations
-- Book berths with specific utility requirements
+The application serves as a booking-focused platform where users can:
+- Book berths online with instant pricing and availability
+- View and manage upcoming and past bookings
+- Access marina facilities and services (water, electricity, WiFi)
 - Submit maintenance and service requests
-- View usage metrics and berth availability
-- Navigate marina locations via an interactive map
+- View marina locations and available berths
+- Monitor pedestal utilities at occupied berths
 
 ## User Preferences
 
@@ -22,24 +23,26 @@ Preferred communication style: Simple, everyday language.
 **Framework**: React with TypeScript using Vite as the build tool
 
 **UI Component System**: shadcn/ui component library built on Radix UI primitives
-- Provides accessible, customizable components following Material Design principles
+- Provides accessible, customizable components with premium design aesthetic
 - Components are styled with Tailwind CSS and support both light/dark themes
-- Design follows a mobile-first approach optimized for touch interactions
+- Design follows a booking-first, mobile-responsive approach optimized for touch interactions
 
 **Routing**: Wouter (lightweight client-side router)
-- Routes: Dashboard (/), Pedestals (/pedestals), Map (/map), Bookings (/bookings), Services (/services), Profile (/profile)
-- Bottom navigation bar provides persistent access to main sections
+- Routes: Homepage (/), Marinas (/marinas), Bookings (/bookings), Services (/services), Profile (/profile), Map (/map)
+- Top navigation bar with logo, menu items, and account dropdown
+- Responsive mobile drawer menu for small screens
 
 **State Management**: TanStack Query (React Query)
 - Handles server state, caching, and automatic refetching
 - Configured with infinite stale time to minimize unnecessary network requests
 - Custom query client with 401 error handling
 
-**Design System**:
-- Typography: Inter/Roboto for body text, DM Sans for Martek branding
-- Mobile-optimized with touch-friendly controls (minimum 48px touch targets)
-- Tailwind-based spacing system (2, 4, 6, 8, 12, 16, 20px units)
-- Custom color scheme using HSL values with CSS variables for theming
+**Design System** (D-Marin Inspired):
+- **Colors**: Deep navy primary (HSL 210 100% 20%), ocean blue accent (HSL 210 100% 40%), clean white backgrounds
+- **Typography**: Plus Jakarta Sans for headings and body text, DM Sans for branding accents
+- **Layout**: Large hero sections, generous whitespace, premium card-based design
+- **Touch Targets**: Minimum 44px for all interactive elements
+- **Spacing**: Tailwind-based system with emphasis on 6, 8, 12, 16, 24px units for premium feel
 
 ### Backend Architecture
 
@@ -79,6 +82,8 @@ Preferred communication style: Simple, everyday language.
 3. **Bookings**: Berth reservations with utility requirements
    - Fields: userId, pedestalId, startDate, endDate, needsWater, needsElectricity, status, estimatedCost
    - Status flow: pending → confirmed → active → completed/cancelled
+   - **Important**: estimatedCost is stored in CENTS (e.g., 15000 cents = $150.00)
+   - Display formatting: Always divide by 100: `${(cost / 100).toFixed(2)}`
 
 4. **ServiceRequests**: Maintenance and support tickets
    - Fields: userId, pedestalId (optional), requestType (maintenance/technical/general), description, urgency (normal/urgent), status (pending/in_progress/resolved)
@@ -92,9 +97,9 @@ Preferred communication style: Simple, everyday language.
 - Currently using in-memory storage but architected for PostgreSQL migration
 
 **Third-Party Services**:
-- Google Fonts CDN: Inter, Roboto, and DM Sans font families
+- Google Fonts CDN: Plus Jakarta Sans and DM Sans font families
 - Asset hosting: Generated images stored in `attached_assets/generated_images/`
-  - Marina backgrounds, Martek logo, promotional banners
+  - Marina backgrounds (hero images), Martek logo, promotional banners
 
 **Key Libraries**:
 - Form Management: react-hook-form with @hookform/resolvers

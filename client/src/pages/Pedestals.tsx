@@ -20,7 +20,8 @@ export default function Pedestals() {
 
   const updatePedestalMutation = useMutation({
     mutationFn: async (data: { id: string; waterEnabled?: boolean; electricityEnabled?: boolean }) => {
-      return apiRequest("PATCH", `/api/pedestals/${data.id}`, data);
+      const { id, ...updateData } = data;
+      return apiRequest("PATCH", `/api/pedestals/${id}`, updateData);
     },
     onSuccess: (updatedPedestal) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pedestals"] });
@@ -231,19 +232,19 @@ export default function Pedestals() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Water Cost:</span>
                     <span className="font-medium">
-                      ${(selectedPedestal.waterUsage * 0.05).toFixed(2)}
+                      ${(selectedPedestal.waterEnabled ? ((selectedPedestal.waterUsage || 0) * 0.05) : 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Electricity Cost:</span>
                     <span className="font-medium">
-                      ${(selectedPedestal.electricityUsage * 0.15).toFixed(2)}
+                      ${(selectedPedestal.electricityEnabled ? ((selectedPedestal.electricityUsage || 0) * 0.15) : 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="border-t pt-2 flex justify-between font-semibold">
                     <span>Total:</span>
                     <span data-testid="text-session-total">
-                      ${((selectedPedestal.waterUsage * 0.05) + (selectedPedestal.electricityUsage * 0.15)).toFixed(2)}
+                      ${((selectedPedestal.waterEnabled ? ((selectedPedestal.waterUsage || 0) * 0.05) : 0) + (selectedPedestal.electricityEnabled ? ((selectedPedestal.electricityUsage || 0) * 0.15) : 0)).toFixed(2)}
                     </span>
                   </div>
                 </CardContent>
