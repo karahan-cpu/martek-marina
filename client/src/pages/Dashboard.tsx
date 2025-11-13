@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,10 @@ import marinarBg from "@assets/generated_images/Marina_harbor_hero_background_a1
 import martekLogo from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
 
 export default function Dashboard() {
+  const [selectedMarina, setSelectedMarina] = useState("");
+  const [checkInDate, setCheckInDate] = useState("");
+  const [checkOutDate, setCheckOutDate] = useState("");
+
   const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
   });
@@ -80,11 +85,13 @@ export default function Dashboard() {
                   <select 
                     className="w-full h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                     data-testid="select-marina-location"
+                    value={selectedMarina}
+                    onChange={(e) => setSelectedMarina(e.target.value)}
                   >
-                    <option>Select Marina</option>
-                    <option>Martek Marina A</option>
-                    <option>Martek Marina B</option>
-                    <option>Martek Marina C</option>
+                    <option value="">Select Marina</option>
+                    <option value="marina-a">Martek Marina A</option>
+                    <option value="marina-b">Martek Marina B</option>
+                    <option value="marina-c">Martek Marina C</option>
                   </select>
                 </div>
 
@@ -98,11 +105,15 @@ export default function Dashboard() {
                       type="date"
                       className="flex-1 h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                       data-testid="input-check-in-date"
+                      value={checkInDate}
+                      onChange={(e) => setCheckInDate(e.target.value)}
                     />
                     <input 
                       type="date"
                       className="flex-1 h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                       data-testid="input-check-out-date"
+                      value={checkOutDate}
+                      onChange={(e) => setCheckOutDate(e.target.value)}
                     />
                   </div>
                 </div>
