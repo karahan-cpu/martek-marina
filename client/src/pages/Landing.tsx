@@ -8,7 +8,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative h-[600px] w-full overflow-hidden">
+      <div className="relative h-[500px] sm:h-[550px] md:h-[600px] w-full overflow-hidden">
         <img
           src={marinaHeroUrl}
           alt="Luxury marina"
@@ -16,23 +16,23 @@ export default function Landing() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,100%,20%)]/90 via-[hsl(210,100%,20%)]/60 to-[hsl(210,100%,20%)]/40" />
         
-        <div className="relative h-full flex flex-col items-center justify-center px-6 text-center text-white">
+        <div className="relative h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center text-white">
           <img
             src={martekLogoUrl}
             alt="Martek Marina"
-            className="h-16 mb-8"
+            className="h-12 sm:h-14 md:h-16 mb-6 sm:mb-8"
             data-testid="img-logo"
           />
-          <h1 className="text-5xl font-bold mb-4" data-testid="text-hero-title">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 px-4" data-testid="text-hero-title">
             Your Perfect Berth Awaits
           </h1>
-          <p className="text-xl mb-8 max-w-2xl" data-testid="text-hero-subtitle">
+          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-2xl px-4" data-testid="text-hero-subtitle">
             Premium berth booking at Martek Marina. Experience world-class facilities, 
             smart pedestals, and seamless service.
           </p>
           <Button
             size="lg"
-            className="h-14 px-8 text-lg font-semibold rounded-xl"
+            className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
             onClick={() => window.location.href = "/api/login"}
             data-testid="button-login"
           >
@@ -42,8 +42,8 @@ export default function Landing() {
       </div>
 
       {/* Features Section */}
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card className="p-6 text-center hover-elevate">
             <div className="flex justify-center mb-4">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -103,18 +103,18 @@ export default function Landing() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-muted py-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4" data-testid="text-cta-title">
+      <div className="bg-muted py-12 sm:py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 px-4" data-testid="text-cta-title">
             Ready to Experience Premium Marina Living?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8" data-testid="text-cta-subtitle">
+          <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 px-4" data-testid="text-cta-subtitle">
             Join Martek Marina and enjoy world-class facilities, secure berths, 
             and exceptional service.
           </p>
           <Button
             size="lg"
-            className="h-14 px-8 text-lg font-semibold rounded-xl"
+            className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
             onClick={() => window.location.href = "/api/login"}
             data-testid="button-login-cta"
           >

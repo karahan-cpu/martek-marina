@@ -51,81 +51,83 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section 
-        className="relative h-[600px] bg-cover bg-center flex items-center justify-center"
+        className="relative h-[500px] sm:h-[550px] md:h-[600px] bg-cover bg-center flex items-center justify-center px-4"
         style={{ 
           backgroundImage: `linear-gradient(rgba(0, 20, 60, 0.7), rgba(0, 40, 80, 0.5)), url(${marinarBg})`,
         }}
         data-testid="section-hero"
       >
-        <div className="container mx-auto px-6 text-center text-white space-y-8">
-          <div className="space-y-4">
+        <div className="container mx-auto px-4 sm:px-6 text-center text-white space-y-6 sm:space-y-8">
+          <div className="space-y-3 sm:space-y-4">
             <img 
               src={martekLogo} 
               alt="Martek Marina" 
-              className="h-20 mx-auto opacity-90"
+              className="h-14 sm:h-16 md:h-20 mx-auto opacity-90"
               data-testid="img-martek-logo"
             />
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight" data-testid="text-hero-title">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight px-2" data-testid="text-hero-title">
               Your Perfect Berth Awaits
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto" data-testid="text-hero-subtitle">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-2xl mx-auto px-4" data-testid="text-hero-subtitle">
               Premium marina berth booking made simple. Reserve your spot in minutes.
             </p>
           </div>
 
           {/* Booking Widget */}
           <Card className="max-w-4xl mx-auto bg-white/95 dark:bg-card/95 backdrop-blur-lg border-2" data-testid="card-booking-widget">
-            <CardContent className="p-8">
-              <div className="grid md:grid-cols-3 gap-4 items-end">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    Marina Location
-                  </label>
-                  <select 
-                    className="w-full h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
-                    data-testid="select-marina-location"
-                    value={selectedMarina}
-                    onChange={(e) => setSelectedMarina(e.target.value)}
-                  >
-                    <option value="">Select Marina</option>
-                    <option value="marina-a">Martek Marina A</option>
-                    <option value="marina-b">Martek Marina B</option>
-                    <option value="marina-c">Martek Marina C</option>
-                  </select>
-                </div>
+            <CardContent className="p-4 sm:p-6 md:p-8">
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      Marina Location
+                    </label>
+                    <select 
+                      className="w-full h-12 sm:h-14 px-3 sm:px-4 text-sm sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
+                      data-testid="select-marina-location"
+                      value={selectedMarina}
+                      onChange={(e) => setSelectedMarina(e.target.value)}
+                    >
+                      <option value="">Select Marina</option>
+                      <option value="marina-a">Martek Marina A</option>
+                      <option value="marina-b">Martek Marina B</option>
+                      <option value="marina-c">Martek Marina C</option>
+                    </select>
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    Dates
-                  </label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="date"
-                      className="flex-1 h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
-                      data-testid="input-check-in-date"
-                      value={checkInDate}
-                      onChange={(e) => setCheckInDate(e.target.value)}
-                    />
-                    <input 
-                      type="date"
-                      className="flex-1 h-14 px-4 rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
-                      data-testid="input-check-out-date"
-                      value={checkOutDate}
-                      onChange={(e) => setCheckOutDate(e.target.value)}
-                    />
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      Dates
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="date"
+                        className="w-full h-12 sm:h-14 px-2 sm:px-4 text-xs sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
+                        data-testid="input-check-in-date"
+                        value={checkInDate}
+                        onChange={(e) => setCheckInDate(e.target.value)}
+                      />
+                      <input 
+                        type="date"
+                        className="w-full h-12 sm:h-14 px-2 sm:px-4 text-xs sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
+                        data-testid="input-check-out-date"
+                        value={checkOutDate}
+                        onChange={(e) => setCheckOutDate(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <Link href="/bookings">
                   <Button 
                     size="lg" 
-                    className="w-full h-14 text-lg font-semibold rounded-xl"
+                    className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-xl"
                     data-testid="button-search-berths"
                   >
                     Search Berths
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <ArrowRight className="ml-2 w-4 sm:w-5 h-4 sm:h-5" />
                   </Button>
                 </Link>
               </div>
@@ -135,14 +137,14 @@ export default function Dashboard() {
       </section>
 
       {/* Upcoming Bookings */}
-      <section className="py-16 bg-background" data-testid="section-upcoming-bookings">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold" data-testid="text-upcoming-bookings-title">
+      <section className="py-12 sm:py-16 bg-background" data-testid="section-upcoming-bookings">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold" data-testid="text-upcoming-bookings-title">
               Your Upcoming Bookings
             </h2>
             <Link href="/bookings">
-              <Button variant="outline" className="rounded-xl" data-testid="button-view-all-bookings">
+              <Button variant="outline" className="rounded-xl w-full sm:w-auto" data-testid="button-view-all-bookings">
                 View All
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -150,7 +152,7 @@ export default function Dashboard() {
           </div>
           
           {bookingsLoading ? (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="border-2">
                   <CardHeader>
@@ -184,7 +186,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {upcomingBookings.map((booking) => (
                 <Card key={booking.id} className="border-2 hover-elevate" data-testid={`card-booking-${booking.id}`}>
                   <CardHeader>
@@ -233,18 +235,18 @@ export default function Dashboard() {
       </section>
 
       {/* Featured Marinas */}
-      <section className="py-16 bg-muted/30 dark:bg-muted/10" data-testid="section-featured-marinas">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">
+      <section className="py-12 sm:py-16 bg-muted/30 dark:bg-muted/10" data-testid="section-featured-marinas">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               Our Premium Marinas
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Choose from our selection of world-class marina facilities
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             <Card className="border-2 hover-elevate overflow-hidden" data-testid="card-marina-a">
               <div className="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <Ship className="w-16 h-16 text-white" />
@@ -352,42 +354,42 @@ export default function Dashboard() {
       </section>
 
       {/* Trust Indicators */}
-      <section className="bg-secondary/30 dark:bg-secondary/10 py-16 border-y" data-testid="section-trust-indicators">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="space-y-2">
-              <div className="text-5xl font-bold text-primary" data-testid="text-stat-berths">450+</div>
-              <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Available Berths</div>
+      <section className="bg-secondary/30 dark:bg-secondary/10 py-12 sm:py-16 border-y" data-testid="section-trust-indicators">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary" data-testid="text-stat-berths">450+</div>
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">Available Berths</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-5xl font-bold text-primary" data-testid="text-stat-marinas">8</div>
-              <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Premium Marinas</div>
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary" data-testid="text-stat-marinas">8</div>
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">Premium Marinas</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-5xl font-bold text-primary" data-testid="text-stat-customers">2,500+</div>
-              <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Happy Boaters</div>
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary" data-testid="text-stat-customers">2,500+</div>
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">Happy Boaters</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-5xl font-bold text-primary" data-testid="text-stat-years">15</div>
-              <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Years of Service</div>
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary" data-testid="text-stat-years">15</div>
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">Years of Service</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-20" data-testid="section-how-it-works">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4" data-testid="text-how-it-works-title">
+      <section className="py-12 sm:py-16 md:py-20" data-testid="section-how-it-works">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4" data-testid="text-how-it-works-title">
               How It Works
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Booking your perfect berth has never been easier
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             <Card className="relative border-2 hover-elevate" data-testid="card-step-1">
               <CardContent className="p-8 text-center space-y-4">
                 <div className="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto">
@@ -434,11 +436,11 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-8 sm:mt-12">
             <Link href="/bookings">
-              <Button size="lg" className="text-lg h-14 px-8 rounded-xl" data-testid="button-start-booking">
+              <Button size="lg" className="text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-xl w-full sm:w-auto" data-testid="button-start-booking">
                 Start Booking Now
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-4 sm:w-5 h-4 sm:h-5" />
               </Button>
             </Link>
           </div>
@@ -446,18 +448,18 @@ export default function Dashboard() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="bg-muted/50 py-20" data-testid="section-why-choose">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">
+      <section className="bg-muted/50 py-12 sm:py-16 md:py-20" data-testid="section-why-choose">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               Why Choose Martek?
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Premium marina services with unmatched quality and reliability
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             <Card className="border-2" data-testid="card-feature-premium">
               <CardContent className="p-8 text-center space-y-4">
                 <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto">
@@ -498,16 +500,16 @@ export default function Dashboard() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20" data-testid="section-cta">
-        <div className="container mx-auto px-6 text-center">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <h2 className="text-4xl font-bold">
+      <section className="py-12 sm:py-16 md:py-20" data-testid="section-cta">
+        <div className="container mx-auto px-4 sm:px-6 text-center">
+          <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold px-4">
               Ready to Book Your Berth?
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground px-4">
               Join thousands of satisfied boaters who trust Martek for their marina needs
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-4">
               <Link href="/bookings">
                 <Button size="lg" className="text-lg h-14 px-8 rounded-xl" data-testid="button-cta-book-now">
                   Book Now
