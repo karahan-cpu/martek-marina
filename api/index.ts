@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express, { type Express } from 'express';
 import serverless from 'serverless-http';
 import { registerRoutes } from '../server/routes';
+import { serveStatic } from '../server/vite';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,42 +22,63 @@ export default async function(req: VercelRequest, res: VercelResponse): Promise<
       }));
       app.use(express.urlencoded({ extended: false }));
 
-      // Register API routes only (don't use the returned HTTP server in serverless)
-      const _server = await registerRoutes(app);
-      // Note: We ignore the server instance in serverless environment
+      // Register API routes
+      try {
+        await registerRoutes(app);
+      } catch (routeError) {
+        console.error('Failed to register routes:', routeError);
+        // Add a fallback route to show error for API routes
+        app.use('/api/*', (req, res) => {
+          res.status(503).json({ 
+            message: 'Service temporarily unavailable. Check server logs.',
+            error: process.env.NODE_ENV === 'development' ? String(routeError) : undefined
+          });
+        });
+      }
 
-      // Error handler
+      // Serve static files - only if they exist (for production)
+      const distPath = path.resolve(import.meta.dirname, '..', 'dist', 'public');
+      if (fs.existsSync(distPath)) {
+        try {
+          serveStatic(app);
+        } catch (staticError) {
+          console.warn('Static file serving failed:', staticError);
+          // Fallback: serve index.html for all non-API routes
+          app.get('*', (req, res) => {
+            if (!req.path.startsWith('/api')) {
+              const indexPath = path.join(distPath, 'index.html');
+              if (fs.existsSync(indexPath)) {
+                res.sendFile(indexPath);
+              } else {
+                res.status(404).json({ message: 'Not found' });
+              }
+            } else {
+              res.status(404).json({ message: 'API route not found' });
+            }
+          });
+        }
+      } else {
+        console.warn('Build directory not found, static files will not be served');
+        // Fallback for non-API routes
+        app.get('*', (req, res) => {
+          if (!req.path.startsWith('/api')) {
+            res.status(503).json({ 
+              message: 'Application is building. Please try again in a moment.',
+              path: req.path 
+            });
+          } else {
+            res.status(404).json({ message: 'API route not found' });
+          }
+        });
+      }
+
+      // Error handler (must be last, after all routes)
       app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
         console.error('Express error:', err);
         const status = err.status || err.statusCode || 500;
         const message = err.message || 'Internal Server Error';
         res.status(status).json({ message });
       });
-
-      // Serve static files only if they exist (for SPA fallback)
-      // Vercel handles static files, but we need this for SPA routing
-      const distPath = path.resolve(process.cwd(), 'dist', 'public');
-      if (fs.existsSync(distPath)) {
-        app.use(express.static(distPath));
-        // Fallback to index.html for SPA routing
-        app.use('*', (_req, res) => {
-          const indexPath = path.resolve(distPath, 'index.html');
-          if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-          } else {
-            res.status(404).json({ message: 'Not found' });
-          }
-        });
-      } else {
-        // If no static files, just return 404 for non-API routes
-        app.use('*', (req, res) => {
-          if (req.path.startsWith('/api')) {
-            res.status(404).json({ message: 'API endpoint not found' });
-          } else {
-            res.status(404).json({ message: 'Not found' });
-          }
-        });
-      }
 
       // Wrap Express app with serverless-http
       const serverlessHandler = serverless(app, {
@@ -66,8 +88,8 @@ export default async function(req: VercelRequest, res: VercelResponse): Promise<
       handler = async (req: VercelRequest, res: VercelResponse) => {
         try {
           await serverlessHandler(req as any, res as any);
-        } catch (error) {
-          console.error('Serverless handler error:', error);
+        } catch (err) {
+          console.error('Serverless handler error:', err);
           if (!res.writableEnded) {
             res.status(500).json({ message: 'Internal Server Error' });
           }
@@ -80,7 +102,7 @@ export default async function(req: VercelRequest, res: VercelResponse): Promise<
     console.error('Function initialization error:', error);
     res.status(500).json({ 
       message: 'Internal Server Error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: process.env.NODE_ENV === 'development' ? String(error) : undefined
     });
   }
 }
