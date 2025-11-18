@@ -1,12 +1,11 @@
-// Database storage for Replit Auth and marina application
-// Reference: Replit Auth blueprint
+// Database storage for Supabase Auth and marina application
 import {
   users,
   pedestals,
   bookings,
   serviceRequests,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Pedestal,
   type InsertPedestal,
   type Booking,
@@ -18,9 +17,9 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations (required for Supabase Auth)
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  upsertUser(user: InsertUser): Promise<User>;
 
   // Pedestal operations
   getPedestals(): Promise<Pedestal[]>;
@@ -42,20 +41,20 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (required for Replit Auth)
+  // User operations (required for Supabase Auth)
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async upsertUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
         target: users.id,
         set: {
-          ...userData,
+          email: userData.email,
           updatedAt: new Date(),
         },
       })
