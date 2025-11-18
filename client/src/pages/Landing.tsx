@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Anchor, MapPin, Clock, Shield } from "lucide-react";
+import { Link } from "wouter";
 import martekLogoUrl from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
 import marinaHeroUrl from "@assets/generated_images/Marina_harbor_hero_background_a1b4edec.png";
 
@@ -30,14 +31,15 @@ export default function Landing() {
             Premium berth booking at Martek Marina. Experience world-class facilities, 
             smart pedestals, and seamless service.
           </p>
-          <Button
-            size="lg"
-            className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
-            onClick={() => window.location.href = "/api/login"}
-            data-testid="button-login"
-          >
-            Log In to Book
-          </Button>
+          <Link href="/login">
+            <Button
+              size="lg"
+              className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
+              data-testid="button-login"
+            >
+              Log In to Book
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -112,14 +114,15 @@ export default function Landing() {
             Join Martek Marina and enjoy world-class facilities, secure berths, 
             and exceptional service.
           </p>
-          <Button
-            size="lg"
-            className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
-            onClick={() => window.location.href = "/api/login"}
-            data-testid="button-login-cta"
-          >
-            Get Started
-          </Button>
+          <Link href="/login">
+            <Button
+              size="lg"
+              className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
+              data-testid="button-login-cta"
+            >
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

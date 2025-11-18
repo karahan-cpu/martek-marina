@@ -12,23 +12,21 @@ import {
 import { Menu, User, Calendar, Ship, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function TopNavBar() {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   const getInitials = () => {
-    if (!user) return "U";
-    const firstInitial = user.firstName?.[0] || "";
-    const lastInitial = user.lastName?.[0] || "";
-    return (firstInitial + lastInitial).toUpperCase() || "U";
+    if (!user?.email) return "U";
+    const email = user.email;
+    return email.substring(0, 2).toUpperCase();
   };
 
-  const getFullName = () => {
-    if (!user) return "User";
-    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+  const getEmail = () => {
+    return user?.email || "user@email.com";
   };
 
   const navItems = [
@@ -88,8 +86,8 @@ export function TopNavBar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-base font-semibold">{getFullName()}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
+                  <p className="text-base font-semibold">Marina User</p>
+                  <p className="text-sm text-muted-foreground">{getEmail()}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -114,7 +112,10 @@ export function TopNavBar() {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 data-testid="menu-logout"
-                onClick={() => window.location.href = "/api/logout"}
+                onClick={async () => {
+                  await signOut();
+                  setLocation("/login");
+                }}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log Out</span>
@@ -145,8 +146,8 @@ export function TopNavBar() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{getFullName()}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
+                  <p className="font-semibold">Marina User</p>
+                  <p className="text-sm text-muted-foreground">{getEmail()}</p>
                 </div>
               </div>
 
@@ -190,7 +191,10 @@ export function TopNavBar() {
                   variant="ghost"
                   className="w-full justify-start h-12 text-destructive"
                   data-testid="mobile-menu-logout"
-                  onClick={() => window.location.href = "/api/logout"}
+                  onClick={async () => {
+                    await signOut();
+                    setLocation("/login");
+                  }}
                 >
                   <LogOut className="mr-2 h-5 w-5" />
                   Log Out

@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Pedestals from "@/pages/Pedestals";
@@ -10,57 +11,66 @@ import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
 import Profile from "@/pages/Profile";
 import Map from "@/pages/Map";
-import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 import { TopNavBar } from "@/components/TopNavBar";
-import { useAuth } from "@/hooks/useAuth";
 
-function Router() {
+function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Login />;
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
       <TopNavBar />
       <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/marinas" component={Pedestals} />
-          <Route path="/pedestals" component={Pedestals} />
-          <Route path="/map" component={Map} />
-          <Route path="/bookings" component={Bookings} />
-          <Route path="/services" component={Services} />
-          <Route path="/profile" component={Profile} />
-          <Route component={NotFound} />
-        </Switch>
+        <Component />
       </main>
     </div>
   );
 }
 
-function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Landing />;
-  }
-
-  return <Router />;
+function Router() {
+  return (
+    <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/marinas">
+        {() => <ProtectedRoute component={Pedestals} />}
+      </Route>
+      <Route path="/pedestals">
+        {() => <ProtectedRoute component={Pedestals} />}
+      </Route>
+      <Route path="/map">
+        {() => <ProtectedRoute component={Map} />}
+      </Route>
+      <Route path="/bookings">
+        {() => <ProtectedRoute component={Bookings} />}
+      </Route>
+      <Route path="/services">
+        {() => <ProtectedRoute component={Services} />}
+      </Route>
+      <Route path="/profile">
+        {() => <ProtectedRoute component={Profile} />}
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
+  );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <AppContent />
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
