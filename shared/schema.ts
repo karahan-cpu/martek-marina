@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ export const marinas = pgTable("marinas", {
   name: text("name").notNull(),
   location: text("location").notNull(),
   description: text("description").notNull(),
-  amenities: text("amenities").array().notNull(),
+  amenities: jsonb("amenities").notNull().$type<string[]>(),
   totalBerths: integer("total_berths").notNull(),
   imageUrl: text("image_url"),
   isPremium: boolean("is_premium").notNull().default(true),
@@ -67,6 +67,8 @@ export const insertUserSchema = createInsertSchema(users);
 
 export const insertMarinaSchema = createInsertSchema(marinas).omit({
   id: true,
+}).extend({
+  amenities: z.array(z.string()),
 });
 
 export const insertPedestalSchema = createInsertSchema(pedestals).omit({
