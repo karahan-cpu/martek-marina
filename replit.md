@@ -154,11 +154,13 @@ To create an admin account:
   - Server-side verifiedAccess Map tracks authorization (userId -> Set<pedestalId>)
   - Users must POST to /verify-access with correct code before controlling pedestal services
   - **Rate Limiting & Brute-Force Protection**:
-    - Maximum 3 failed verification attempts per user per pedestal
-    - 15-minute lockout after exceeding max attempts
-    - Automatic reset after 1 minute of inactivity
+    - Exponential backoff lockout strategy for failed verification attempts
+    - Progressive lockouts: 5min (1-2 fails), 15min (3-4 fails), 1hr (5-6 fails), 4hr (7-9 fails), 12hr (10-14 fails), 24hr (15+ fails)
+    - Total failed attempts tracked cumulatively (never reset until success)
+    - Lockout applies immediately after EACH failed attempt (no free retry window)
     - Security logging for all verification attempts (successful and failed)
     - Per-user-per-pedestal tracking prevents attacks across multiple pedestals
+    - Success verification clears failed attempt history
 
 **Data Validation**: Zod schemas with Drizzle integration
 - Schema definitions provide type safety and runtime validation

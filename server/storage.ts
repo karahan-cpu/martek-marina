@@ -5,6 +5,7 @@ import {
   pedestals,
   bookings,
   serviceRequests,
+  verificationAttempts,
   type User,
   type InsertUser,
   type Marina,
@@ -15,9 +16,11 @@ import {
   type InsertBooking,
   type ServiceRequest,
   type InsertServiceRequest,
+  type VerificationAttempt,
+  type InsertVerificationAttempt,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Supabase Auth)
@@ -49,6 +52,11 @@ export interface IStorage {
   getServiceRequest(id: string): Promise<ServiceRequest | undefined>;
   createServiceRequest(request: InsertServiceRequest): Promise<ServiceRequest>;
   updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest | undefined>;
+
+  // Verification attempt operations (for rate limiting)
+  getVerificationAttempt(userId: string, pedestalId: string): Promise<VerificationAttempt | undefined>;
+  upsertVerificationAttempt(attempt: InsertVerificationAttempt): Promise<VerificationAttempt>;
+  deleteVerificationAttempt(userId: string, pedestalId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -187,6 +195,61 @@ export class DatabaseStorage implements IStorage {
       .where(eq(serviceRequests.id, id))
       .returning();
     return request;
+  }
+
+  // Verification attempt operations (for rate limiting)
+  async getVerificationAttempt(userId: string, pedestalId: string): Promise<VerificationAttempt | undefined> {
+    const [attempt] = await db
+      .select()
+      .from(verificationAttempts)
+      .where(
+        and(
+          eq(verificationAttempts.userId, userId),
+          eq(verificationAttempts.pedestalId, pedestalId)
+        )
+      );
+    return attempt;
+  }
+
+  async upsertVerificationAttempt(attemptData: InsertVerificationAttempt): Promise<VerificationAttempt> {
+    const existing = await this.getVerificationAttempt(attemptData.userId, attemptData.pedestalId);
+    
+    if (existing) {
+      // Update existing record
+      const [updated] = await db
+        .update(verificationAttempts)
+        .set({
+          totalFailed: attemptData.totalFailed,
+          lockoutUntil: attemptData.lockoutUntil,
+          lastAttempt: new Date(),
+        })
+        .where(
+          and(
+            eq(verificationAttempts.userId, attemptData.userId),
+            eq(verificationAttempts.pedestalId, attemptData.pedestalId)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      // Insert new record
+      const [created] = await db
+        .insert(verificationAttempts)
+        .values(attemptData)
+        .returning();
+      return created;
+    }
+  }
+
+  async deleteVerificationAttempt(userId: string, pedestalId: string): Promise<void> {
+    await db
+      .delete(verificationAttempts)
+      .where(
+        and(
+          eq(verificationAttempts.userId, userId),
+          eq(verificationAttempts.pedestalId, pedestalId)
+        )
+      );
   }
 }
 

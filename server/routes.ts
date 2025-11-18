@@ -13,19 +13,28 @@ const updatePedestalServicesSchema = z.object({
 }).strict(); // Reject any extra fields
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Store verified pedestal access in memory (in production, use Redis or database)
+  // Store verified pedestal access in memory (ephemeral session data, resets on server restart)
   const verifiedAccess = new Map<string, Set<string>>(); // userId -> Set of pedestalIds
   
-  // Rate limiting for access code verification (prevent brute-force attacks)
-  interface VerifyAttempt {
-    count: number;
-    lockoutUntil?: number;
-    lastAttempt: number;
-  }
-  const verifyAttempts = new Map<string, VerifyAttempt>(); // "userId:pedestalId" -> attempt data
-  const MAX_ATTEMPTS = 3; // Max failed attempts before lockout
-  const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes lockout
-  const ATTEMPT_WINDOW = 60 * 1000; // Reset counter after 1 minute of no attempts
+  // Calculate lockout duration based on failed attempts (exponential backoff)
+  const calculateLockoutDuration = (failedAttempts: number): number => {
+    // Exponential backoff: 5min, 15min, 1hr, 4hr, 12hr, 24hr
+    const durations = [
+      5 * 60 * 1000,      // 5 minutes (1-2 attempts)
+      15 * 60 * 1000,     // 15 minutes (3-4 attempts)
+      60 * 60 * 1000,     // 1 hour (5-6 attempts)
+      4 * 60 * 60 * 1000, // 4 hours (7-9 attempts)
+      12 * 60 * 60 * 1000, // 12 hours (10-14 attempts)
+      24 * 60 * 60 * 1000  // 24 hours (15+ attempts)
+    ];
+    
+    if (failedAttempts <= 2) return durations[0];
+    if (failedAttempts <= 4) return durations[1];
+    if (failedAttempts <= 6) return durations[2];
+    if (failedAttempts <= 9) return durations[3];
+    if (failedAttempts <= 14) return durations[4];
+    return durations[5];
+  };
 
   // Auth route - get logged in user
   app.get('/api/auth/user', requireAuth, async (req: any, res) => {
@@ -161,35 +170,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { accessCode } = req.body;
       const userId = req.user.id;
       const pedestalId = req.params.id;
-      const attemptKey = `${userId}:${pedestalId}`;
       
       // Validate input
       if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
         return res.status(400).json({ error: "Invalid access code format" });
       }
       
-      // Check rate limiting
+      // Check rate limiting from database
       const now = Date.now();
-      let attempt = verifyAttempts.get(attemptKey);
+      let attempt = await storage.getVerificationAttempt(userId, pedestalId);
       
-      if (attempt) {
-        // Check if locked out
-        if (attempt.lockoutUntil && now < attempt.lockoutUntil) {
-          const remainingMinutes = Math.ceil((attempt.lockoutUntil - now) / 60000);
-          console.warn(`[SECURITY] User ${userId} locked out for pedestal ${pedestalId}. ${remainingMinutes} minutes remaining.`);
+      // Check if currently locked out
+      if (attempt?.lockoutUntil) {
+        const lockoutTime = new Date(attempt.lockoutUntil).getTime();
+        if (now < lockoutTime) {
+          const remainingMs = lockoutTime - now;
+          const remainingMinutes = Math.ceil(remainingMs / 60000);
+          const remainingHours = Math.floor(remainingMs / 3600000);
+          
+          let timeMsg = `${remainingMinutes} minute(s)`;
+          if (remainingHours >= 1) {
+            timeMsg = `${remainingHours} hour(s)`;
+          }
+          
+          console.warn(`[SECURITY] User ${userId} locked out for pedestal ${pedestalId}. ${timeMsg} remaining. Total failed: ${attempt.totalFailed}`);
           return res.status(429).json({ 
-            error: `Too many failed attempts. Please try again in ${remainingMinutes} minute(s).` 
+            error: `Too many failed attempts. Please try again in ${timeMsg}.` 
           });
         }
-        
-        // Reset counter if last attempt was more than ATTEMPT_WINDOW ago
-        if (now - attempt.lastAttempt > ATTEMPT_WINDOW) {
-          attempt = { count: 0, lastAttempt: now };
-          verifyAttempts.set(attemptKey, attempt);
-        }
-      } else {
-        attempt = { count: 0, lastAttempt: now };
-        verifyAttempts.set(attemptKey, attempt);
       }
       
       const pedestal = await storage.getPedestal(pedestalId);
@@ -201,38 +209,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify access code
       if (pedestal.accessCode !== accessCode) {
         // Increment failed attempts
-        attempt.count++;
-        attempt.lastAttempt = now;
+        const newTotalFailed = (attempt?.totalFailed || 0) + 1;
         
-        // Check if max attempts exceeded
-        if (attempt.count >= MAX_ATTEMPTS) {
-          attempt.lockoutUntil = now + LOCKOUT_DURATION;
-          console.warn(`[SECURITY] User ${userId} exceeded max attempts for pedestal ${pedestalId}. Locked out for 15 minutes.`);
-          verifyAttempts.set(attemptKey, attempt);
-          return res.status(429).json({ 
-            error: `Too many failed attempts. Your access is locked for 15 minutes.` 
-          });
+        // Calculate progressive lockout based on total failed attempts
+        const lockoutDuration = calculateLockoutDuration(newTotalFailed);
+        const lockoutUntil = new Date(now + lockoutDuration);
+        
+        // Update attempt tracking in database
+        await storage.upsertVerificationAttempt({
+          userId,
+          pedestalId,
+          totalFailed: newTotalFailed,
+          lockoutUntil,
+        });
+        
+        const lockoutMinutes = Math.ceil(lockoutDuration / 60000);
+        const lockoutHours = Math.floor(lockoutDuration / 3600000);
+        let lockoutMsg = `${lockoutMinutes} minute(s)`;
+        if (lockoutHours >= 1) {
+          lockoutMsg = `${lockoutHours} hour(s)`;
         }
         
-        verifyAttempts.set(attemptKey, attempt);
-        console.warn(`[SECURITY] Failed access code attempt ${attempt.count}/${MAX_ATTEMPTS} by user ${userId} for pedestal ${pedestalId}`);
-        return res.status(401).json({ error: "Invalid access code" });
+        console.warn(`[SECURITY] Failed attempt #${newTotalFailed} by user ${userId} for pedestal ${pedestalId}. Locked out for ${lockoutMsg}.`);
+        
+        return res.status(429).json({ 
+          error: `Invalid access code. Your access is locked for ${lockoutMsg} due to repeated failed attempts.` 
+        });
       }
       
       // Success - clear failed attempts and grant access
-      verifyAttempts.delete(attemptKey);
+      if (attempt) {
+        console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} after ${attempt.totalFailed} previous failed attempts`);
+        await storage.deleteVerificationAttempt(userId, pedestalId);
+      } else {
+        console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} on first try`);
+      }
       
       if (!verifiedAccess.has(userId)) {
         verifiedAccess.set(userId, new Set());
       }
       verifiedAccess.get(userId)!.add(pedestalId);
       
-      console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId}`);
-      
       // Return success without exposing access code
       const { accessCode: _, ...safePedestal } = pedestal;
       res.json({ verified: true, pedestal: safePedestal });
     } catch (error) {
+      console.error("[SECURITY] Error in verify-access:", error);
       res.status(500).json({ error: "Failed to verify access code" });
     }
   });

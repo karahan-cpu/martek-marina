@@ -62,6 +62,17 @@ export const serviceRequests = pgTable("service_requests", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Verification attempts tracking for rate limiting (prevent brute-force attacks)
+export const verificationAttempts = pgTable("verification_attempts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  pedestalId: varchar("pedestal_id").notNull(),
+  totalFailed: integer("total_failed").notNull().default(0),
+  lockoutUntil: timestamp("lockout_until"),
+  firstAttempt: timestamp("first_attempt").notNull().default(sql`now()`),
+  lastAttempt: timestamp("last_attempt").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 
@@ -88,6 +99,12 @@ export const insertServiceRequestSchema = createInsertSchema(serviceRequests).om
   createdAt: true,
 });
 
+export const insertVerificationAttemptSchema = createInsertSchema(verificationAttempts).omit({
+  id: true,
+  firstAttempt: true,
+  lastAttempt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -103,3 +120,6 @@ export type Booking = typeof bookings.$inferSelect;
 
 export type InsertServiceRequest = z.infer<typeof insertServiceRequestSchema>;
 export type ServiceRequest = typeof serviceRequests.$inferSelect;
+
+export type InsertVerificationAttempt = z.infer<typeof insertVerificationAttemptSchema>;
+export type VerificationAttempt = typeof verificationAttempts.$inferSelect;
