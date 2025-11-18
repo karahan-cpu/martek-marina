@@ -74,12 +74,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/marinas/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const updated = await storage.updateMarina(req.params.id, req.body);
+      // Validate marina update data
+      const validatedData = insertMarinaSchema.partial().parse(req.body);
+      
+      const updated = await storage.updateMarina(req.params.id, validatedData);
       if (!updated) {
         return res.status(404).json({ error: "Marina not found" });
       }
       res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid marina data" });
+      }
       res.status(500).json({ error: "Failed to update marina" });
     }
   });
@@ -173,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/pedestals", requireAuth, async (req, res) => {
+  app.post("/api/pedestals", requireAuth, requireAdmin, async (req, res) => {
     try {
       const validatedData = insertPedestalSchema.parse(req.body);
       const pedestal = await storage.createPedestal(validatedData);

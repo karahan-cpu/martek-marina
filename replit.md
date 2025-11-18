@@ -18,6 +18,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **November 18, 2025**: Implemented marina entity system
+  - Created marinas table with JSONB amenities field
+  - Seeded 2 premium marinas: Martek Marina İstanbul and Martek Marina Bodrum
+  - Updated pedestals to reference marina via marinaId foreign key
+  - Distributed 20 pedestals across 2 marinas (Istanbul: A01-A10, Bodrum: B01-B10)
+  - Created Marina frontend page displaying premium facilities
+  - Added marina API routes with proper validation (GET, POST, PATCH)
+  - Secured pedestal creation to admin-only access (POST /api/pedestals requires admin)
+
 - **November 18, 2025**: Implemented secure pedestal access control system
   - Added 6-digit access codes to pedestals for secure service control
   - Manual code entry verification before allowing water/electricity control
@@ -32,6 +41,33 @@ Preferred communication style: Simple, everyday language.
   - Backend JWT verification via Supabase Admin client
   - Email/password authentication with email confirmation
   - All authentication vulnerabilities resolved and architect-approved
+
+## Admin Account Setup
+
+To create an admin account:
+
+1. **Sign up for an account**:
+   - Navigate to `/signup` in your browser
+   - Enter your email (e.g., karahan.karakurt1997@gmail.com) and password
+   - Complete the Supabase email verification process
+
+2. **Promote account to admin**:
+   - After successful signup and login, run this SQL command:
+   ```sql
+   UPDATE users SET is_admin = true WHERE email = 'karahan.karakurt1997@gmail.com';
+   ```
+   - You can execute this via the database pane in Replit or using the execute_sql_tool
+
+3. **Verify admin access**:
+   - Log in to the application
+   - Navigate to `/admin` to access the admin dashboard
+   - Admin features include:
+     - View all users
+     - View all pedestals with access codes (for customer support)
+     - Create/manage marinas
+     - Create/manage pedestals
+
+**Note**: Only admin users can access the `/admin` route and perform administrative operations like creating pedestals or marinas.
 
 ## System Architecture
 
@@ -82,7 +118,7 @@ Preferred communication style: Simple, everyday language.
 - Migrated from in-memory to persistent database storage (November 2025)
 - Implements IStorage interface for clean separation of concerns
 - Uses Drizzle ORM for type-safe database operations
-- Database tables: users, pedestals, bookings, serviceRequests
+- Database tables: users, marinas, pedestals, bookings, serviceRequests
 - Session management handled by Supabase (client-side)
 
 **API Endpoints**:
@@ -91,7 +127,9 @@ Preferred communication style: Simple, everyday language.
   - All API requests include `Authorization: Bearer {jwt_token}` header
   - Backend validates JWT tokens via Supabase Admin client
 - **Data Operations**:
-  - `/api/pedestals` - GET (list), POST (create)
+  - `/api/marinas` - GET (list), POST (create - admin only)
+  - `/api/marinas/:id` - GET (single), PATCH (update - admin only)
+  - `/api/pedestals` - GET (list), POST (create - admin only)
   - `/api/pedestals/:id` - GET (single), PATCH (update - requires verified access)
   - `/api/pedestals/:id/verify-access` - POST (verify 6-digit access code)
   - `/api/bookings` - GET (list), POST (create)
@@ -115,25 +153,33 @@ Preferred communication style: Simple, everyday language.
 **Core Entities**:
 
 1. **Users**: Authenticated marina customers (managed by Supabase Auth)
-   - Fields: id (Supabase user UUID), email
+   - Fields: id (Supabase user UUID), email, isAdmin
    - Users are created during signup via Supabase Auth
    - Passwords and authentication managed by Supabase
    - Email confirmation required for new signups (configurable in Supabase dashboard)
+   - **Admin Access**: isAdmin field controls access to admin dashboard and admin-only API endpoints
 
-2. **Pedestals**: Smart utility distribution points with secure access control
-   - Fields: berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY, accessCode
+2. **Marinas**: Premium marina facilities managed by Martek
+   - Fields: id, name, location, description, amenities (JSONB array), totalBerths, imageUrl, isPremium
+   - Represents physical marina locations (e.g., İstanbul, Bodrum)
+   - amenities stored as JSONB for efficient array handling
+   - Each marina contains multiple pedestals
+
+3. **Pedestals**: Smart utility distribution points with secure access control
+   - Fields: id, marinaId, berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY, accessCode
    - Represents physical pedestal units at marina berths
+   - **Marina Reference**: Each pedestal belongs to a specific marina via marinaId foreign key
    - **Security**: accessCode field (6-digit code) never returned in API responses
    - **Access Control**: Users must verify access code via POST /api/pedestals/:id/verify-access before controlling services
    - **Authorization**: Server-side verifiedAccess Map tracks which users have unlocked which pedestals
 
-3. **Bookings**: Berth reservations with utility requirements
+4. **Bookings**: Berth reservations with utility requirements
    - Fields: userId, pedestalId, startDate, endDate, needsWater, needsElectricity, status, estimatedCost
    - Status flow: pending → confirmed → active → completed/cancelled
    - **Important**: estimatedCost is stored in CENTS (e.g., 15000 cents = $150.00)
    - Display formatting: Always divide by 100: `${(cost / 100).toFixed(2)}`
 
-4. **ServiceRequests**: Maintenance and support tickets
+5. **ServiceRequests**: Maintenance and support tickets
    - Fields: userId, pedestalId (optional), requestType (maintenance/technical/general), description, urgency (normal/urgent), status (pending/in_progress/resolved)
 
 ### External Dependencies
