@@ -15,6 +15,17 @@ const updatePedestalServicesSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Store verified pedestal access in memory (in production, use Redis or database)
   const verifiedAccess = new Map<string, Set<string>>(); // userId -> Set of pedestalIds
+  
+  // Rate limiting for access code verification (prevent brute-force attacks)
+  interface VerifyAttempt {
+    count: number;
+    lockoutUntil?: number;
+    lastAttempt: number;
+  }
+  const verifyAttempts = new Map<string, VerifyAttempt>(); // "userId:pedestalId" -> attempt data
+  const MAX_ATTEMPTS = 3; // Max failed attempts before lockout
+  const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes lockout
+  const ATTEMPT_WINDOW = 60 * 1000; // Reset counter after 1 minute of no attempts
 
   // Auth route - get logged in user
   app.get('/api/auth/user', requireAuth, async (req: any, res) => {
@@ -148,28 +159,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pedestals/:id/verify-access", requireAuth, async (req: any, res) => {
     try {
       const { accessCode } = req.body;
+      const userId = req.user.id;
+      const pedestalId = req.params.id;
+      const attemptKey = `${userId}:${pedestalId}`;
       
       // Validate input
       if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
         return res.status(400).json({ error: "Invalid access code format" });
       }
       
-      const pedestal = await storage.getPedestal(req.params.id);
+      // Check rate limiting
+      const now = Date.now();
+      let attempt = verifyAttempts.get(attemptKey);
+      
+      if (attempt) {
+        // Check if locked out
+        if (attempt.lockoutUntil && now < attempt.lockoutUntil) {
+          const remainingMinutes = Math.ceil((attempt.lockoutUntil - now) / 60000);
+          console.warn(`[SECURITY] User ${userId} locked out for pedestal ${pedestalId}. ${remainingMinutes} minutes remaining.`);
+          return res.status(429).json({ 
+            error: `Too many failed attempts. Please try again in ${remainingMinutes} minute(s).` 
+          });
+        }
+        
+        // Reset counter if last attempt was more than ATTEMPT_WINDOW ago
+        if (now - attempt.lastAttempt > ATTEMPT_WINDOW) {
+          attempt = { count: 0, lastAttempt: now };
+          verifyAttempts.set(attemptKey, attempt);
+        }
+      } else {
+        attempt = { count: 0, lastAttempt: now };
+        verifyAttempts.set(attemptKey, attempt);
+      }
+      
+      const pedestal = await storage.getPedestal(pedestalId);
       
       if (!pedestal) {
         return res.status(404).json({ error: "Pedestal not found" });
       }
       
+      // Verify access code
       if (pedestal.accessCode !== accessCode) {
+        // Increment failed attempts
+        attempt.count++;
+        attempt.lastAttempt = now;
+        
+        // Check if max attempts exceeded
+        if (attempt.count >= MAX_ATTEMPTS) {
+          attempt.lockoutUntil = now + LOCKOUT_DURATION;
+          console.warn(`[SECURITY] User ${userId} exceeded max attempts for pedestal ${pedestalId}. Locked out for 15 minutes.`);
+          verifyAttempts.set(attemptKey, attempt);
+          return res.status(429).json({ 
+            error: `Too many failed attempts. Your access is locked for 15 minutes.` 
+          });
+        }
+        
+        verifyAttempts.set(attemptKey, attempt);
+        console.warn(`[SECURITY] Failed access code attempt ${attempt.count}/${MAX_ATTEMPTS} by user ${userId} for pedestal ${pedestalId}`);
         return res.status(401).json({ error: "Invalid access code" });
       }
       
-      // Store verified access for this user
-      const userId = req.user.id;
+      // Success - clear failed attempts and grant access
+      verifyAttempts.delete(attemptKey);
+      
       if (!verifiedAccess.has(userId)) {
         verifiedAccess.set(userId, new Set());
       }
-      verifiedAccess.get(userId)!.add(req.params.id);
+      verifiedAccess.get(userId)!.add(pedestalId);
+      
+      console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId}`);
       
       // Return success without exposing access code
       const { accessCode: _, ...safePedestal } = pedestal;

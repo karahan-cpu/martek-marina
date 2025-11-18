@@ -18,6 +18,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **November 18, 2025**: Added QR code scanning and access entry screen for pedestals
+  - Implemented PedestalAccessEntry component with two access methods:
+    - QR code scanner using phone camera (html5-qrcode library)
+    - Manual 6-digit code entry with pedestal selection (secure, per-pedestal verification)
+  - QR codes encode format: "pedestalId:accessCode" for secure pedestal identification
+  - Manual entry flow: Select pedestal → Enter 6-digit code → Verify against specific pedestal
+  - Updated /pedestals page to show access entry screen first, then unlocked pedestal
+  - Removed "Marinas" from navigation bar (kept Pedestals, My Bookings, Services)
+  - Security: Per-pedestal code verification prevents brute-force attacks
+
 - **November 18, 2025**: Implemented marina entity system
   - Created marinas table with JSONB amenities field
   - Seeded 2 premium marinas: Martek Marina İstanbul and Martek Marina Bodrum
@@ -131,7 +141,7 @@ To create an admin account:
   - `/api/marinas/:id` - GET (single), PATCH (update - admin only)
   - `/api/pedestals` - GET (list), POST (create - admin only)
   - `/api/pedestals/:id` - GET (single), PATCH (update - requires verified access)
-  - `/api/pedestals/:id/verify-access` - POST (verify 6-digit access code)
+  - `/api/pedestals/:id/verify-access` - POST (verify 6-digit access code for specific pedestal)
   - `/api/bookings` - GET (list), POST (create)
   - `/api/bookings/:id` - PATCH (update)
   - `/api/service-requests` - GET (list), POST (create)
@@ -143,6 +153,12 @@ To create an admin account:
   - Storage layer filters out immutable fields (accessCode, berthNumber, id) as defense-in-depth
   - Server-side verifiedAccess Map tracks authorization (userId -> Set<pedestalId>)
   - Users must POST to /verify-access with correct code before controlling pedestal services
+  - **Rate Limiting & Brute-Force Protection**:
+    - Maximum 3 failed verification attempts per user per pedestal
+    - 15-minute lockout after exceeding max attempts
+    - Automatic reset after 1 minute of inactivity
+    - Security logging for all verification attempts (successful and failed)
+    - Per-user-per-pedestal tracking prevents attacks across multiple pedestals
 
 **Data Validation**: Zod schemas with Drizzle integration
 - Schema definitions provide type safety and runtime validation

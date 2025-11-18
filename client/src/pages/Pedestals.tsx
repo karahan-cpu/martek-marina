@@ -10,12 +10,14 @@ import { Droplets, Zap, MapPin, Lock } from "lucide-react";
 import type { Pedestal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PedestalUnlockDialog } from "@/components/PedestalUnlockDialog";
+import { PedestalAccessEntry } from "@/components/PedestalAccessEntry";
 import adBanner from "@assets/generated_images/Marina_equipment_ad_banner_d7c1fc9b.png";
 
 export default function Pedestals() {
   const [selectedPedestal, setSelectedPedestal] = useState<Pedestal | null>(null);
   const [pedestalToUnlock, setPedestalToUnlock] = useState<Pedestal | null>(null);
   const [unlockedPedestals, setUnlockedPedestals] = useState<Set<string>>(new Set());
+  const [showAccessEntry, setShowAccessEntry] = useState(true);
 
   const { data: pedestals, isLoading } = useQuery<Pedestal[]>({
     queryKey: ["/api/pedestals"],
@@ -65,6 +67,12 @@ export default function Pedestals() {
     setSelectedPedestal(pedestal);
   };
 
+  const handleAccessGranted = (pedestal: Pedestal) => {
+    setUnlockedPedestals((prev) => new Set(prev).add(pedestal.id));
+    setShowAccessEntry(false);
+    setSelectedPedestal(pedestal);
+  };
+
   const handleToggleService = (service: "water" | "electricity", enabled: boolean) => {
     if (!selectedPedestal) return;
     
@@ -73,6 +81,10 @@ export default function Pedestals() {
       [service === "water" ? "waterEnabled" : "electricityEnabled"]: enabled,
     });
   };
+
+  if (showAccessEntry) {
+    return <PedestalAccessEntry onAccessGranted={handleAccessGranted} />;
+  }
 
   if (isLoading) {
     return (
