@@ -21,6 +21,7 @@ export const pedestals = pgTable("pedestals", {
   currentUserId: varchar("current_user_id"),
   locationX: integer("location_x").notNull(), // for map visualization
   locationY: integer("location_y").notNull(),
+  accessCode: varchar("access_code", { length: 8 }).notNull(), // 6-8 digit code for QR/manual unlock
 });
 
 export const bookings = pgTable("bookings", {
