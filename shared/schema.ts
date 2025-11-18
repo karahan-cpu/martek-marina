@@ -8,6 +8,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(), // Supabase user ID
   email: varchar("email").unique().notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
 });
 
 export const pedestals = pgTable("pedestals", {
