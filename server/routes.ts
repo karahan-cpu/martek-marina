@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
 import { requireAuth } from "./supabaseAuth";
+import { requireAdmin } from "./adminMiddleware";
 import { z } from "zod";
 
 // Schema for updating pedestal service controls - ONLY allow these fields
@@ -218,6 +219,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to update service request" });
+    }
+  });
+
+  // Admin routes - require both authentication and admin privileges
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (_req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { isAdmin } = req.body;
+      const updated = await storage.updateUser(req.params.id, { isAdmin });
+      if (!updated) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.get("/api/admin/pedestals", requireAuth, requireAdmin, async (_req, res) => {
+    try {
+      // Admin can see everything including access codes
+      const pedestals = await storage.getPedestals();
+      res.json(pedestals);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pedestals" });
+    }
+  });
+
+  app.get("/api/admin/bookings", requireAuth, requireAdmin, async (_req, res) => {
+    try {
+      const bookings = await storage.getBookings();
+      res.json(bookings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bookings" });
+    }
+  });
+
+  app.get("/api/admin/service-requests", requireAuth, requireAdmin, async (_req, res) => {
+    try {
+      const requests = await storage.getServiceRequests();
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch service requests" });
     }
   });
 

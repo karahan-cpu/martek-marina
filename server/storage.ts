@@ -20,6 +20,8 @@ export interface IStorage {
   // User operations (required for Supabase Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, update: Partial<User>): Promise<User | undefined>;
 
   // Pedestal operations
   getPedestals(): Promise<Pedestal[]>;
@@ -57,6 +59,19 @@ export class DatabaseStorage implements IStorage {
           email: userData.email,
         },
       })
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateUser(id: string, update: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(update)
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
