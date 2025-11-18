@@ -59,6 +59,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/pedestals/:id/verify-access", requireAuth, async (req, res) => {
+    try {
+      const { accessCode } = req.body;
+      const pedestal = await storage.getPedestal(req.params.id);
+      
+      if (!pedestal) {
+        return res.status(404).json({ error: "Pedestal not found" });
+      }
+      
+      if (pedestal.accessCode !== accessCode) {
+        return res.status(401).json({ error: "Invalid access code" });
+      }
+      
+      res.json({ verified: true, pedestal });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify access code" });
+    }
+  });
+
   app.post("/api/pedestals", requireAuth, async (req, res) => {
     try {
       const validatedData = insertPedestalSchema.parse(req.body);

@@ -46,10 +46,10 @@ export function TopNavBar() {
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/">
-          <a className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-3 py-2 -ml-3" data-testid="link-logo">
+          <div className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-3 py-2 -ml-3 cursor-pointer" data-testid="link-logo">
             <Ship className="w-8 h-8 text-primary" />
             <span className="text-2xl font-bold text-primary font-['DM_Sans']">MARTEK</span>
-          </a>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -168,17 +168,18 @@ export function TopNavBar() {
               </div>
 
               <div className="border-t pt-4 flex flex-col gap-1">
-                <Link href="/profile">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-12"
-                    onClick={() => setMobileMenuOpen(false)}
-                    data-testid="mobile-menu-profile"
-                  >
-                    <User className="mr-2 h-5 w-5" />
-                    Profile
-                  </Button>
-                </Link>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start h-12"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setLocation("/profile");
+                  }}
+                  data-testid="mobile-menu-profile"
+                >
+                  <User className="mr-2 h-5 w-5" />
+                  Profile
+                </Button>
                 <Button
                   variant="ghost"
                   className="w-full justify-start h-12"

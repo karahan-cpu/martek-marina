@@ -6,13 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Droplets, Zap, MapPin } from "lucide-react";
+import { Droplets, Zap, MapPin, Lock } from "lucide-react";
 import type { Pedestal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { PedestalUnlockDialog } from "@/components/PedestalUnlockDialog";
 import adBanner from "@assets/generated_images/Marina_equipment_ad_banner_d7c1fc9b.png";
 
 export default function Pedestals() {
   const [selectedPedestal, setSelectedPedestal] = useState<Pedestal | null>(null);
+  const [pedestalToUnlock, setPedestalToUnlock] = useState<Pedestal | null>(null);
+  const [unlockedPedestals, setUnlockedPedestals] = useState<Set<string>>(new Set());
 
   const { data: pedestals, isLoading } = useQuery<Pedestal[]>({
     queryKey: ["/api/pedestals"],
@@ -47,6 +50,19 @@ export default function Pedestals() {
   const getStatusLabel = (status: string) => {
     if (!status || typeof status !== 'string') return 'Unknown';
     return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  const handleControlClick = (pedestal: Pedestal) => {
+    if (!unlockedPedestals.has(pedestal.id)) {
+      setPedestalToUnlock(pedestal);
+    } else {
+      setSelectedPedestal(pedestal);
+    }
+  };
+
+  const handleUnlocked = (pedestal: Pedestal) => {
+    setUnlockedPedestals((prev) => new Set(prev).add(pedestal.id));
+    setSelectedPedestal(pedestal);
   };
 
   const handleToggleService = (service: "water" | "electricity", enabled: boolean) => {
@@ -93,7 +109,7 @@ export default function Pedestals() {
             <div key={pedestal.id}>
               <Card 
                 className="hover-elevate cursor-pointer"
-                onClick={() => setSelectedPedestal(pedestal)}
+                onClick={() => handleControlClick(pedestal)}
                 data-testid={`card-pedestal-${pedestal.id}`}
               >
                 <CardContent className="p-4">
@@ -109,6 +125,11 @@ export default function Pedestals() {
                         >
                           {getStatusLabel(pedestal.status)}
                         </Badge>
+                        {unlockedPedestals.has(pedestal.id) && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
+                            Unlocked
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -130,11 +151,22 @@ export default function Pedestals() {
                       </div>
                     </div>
                     <Button 
-                      variant="outline" 
+                      variant={unlockedPedestals.has(pedestal.id) ? "default" : "outline"}
                       size="sm"
                       data-testid={`button-control-${pedestal.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleControlClick(pedestal);
+                      }}
                     >
-                      Control
+                      {unlockedPedestals.has(pedestal.id) ? (
+                        "Control"
+                      ) : (
+                        <>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Unlock
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -160,6 +192,13 @@ export default function Pedestals() {
           ))}
         </div>
       </div>
+
+      <PedestalUnlockDialog
+        pedestal={pedestalToUnlock}
+        open={!!pedestalToUnlock}
+        onClose={() => setPedestalToUnlock(null)}
+        onUnlocked={handleUnlocked}
+      />
 
       <Dialog open={!!selectedPedestal} onOpenChange={() => setSelectedPedestal(null)}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-pedestal-control">
