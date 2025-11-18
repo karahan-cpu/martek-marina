@@ -16,6 +16,23 @@ The application serves as a booking-focused platform where users can:
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- **November 18, 2025**: Implemented secure pedestal access control system
+  - Added 6-digit access codes to pedestals for secure service control
+  - Manual code entry verification before allowing water/electricity control
+  - Server-side authorization tracking (verifiedAccess Map)
+  - Strict API validation preventing access code tampering
+  - Defense-in-depth: both API and storage layer protect immutable fields
+  - Architect-approved security implementation
+
+- **November 2025**: Migrated from Replit Auth to Supabase Auth
+  - Client-side session management via Supabase SDK
+  - JWT-based authentication with Bearer tokens
+  - Backend JWT verification via Supabase Admin client
+  - Email/password authentication with email confirmation
+  - All authentication vulnerabilities resolved and architect-approved
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -75,11 +92,19 @@ Preferred communication style: Simple, everyday language.
   - Backend validates JWT tokens via Supabase Admin client
 - **Data Operations**:
   - `/api/pedestals` - GET (list), POST (create)
-  - `/api/pedestals/:id` - GET (single), PATCH (update)
+  - `/api/pedestals/:id` - GET (single), PATCH (update - requires verified access)
+  - `/api/pedestals/:id/verify-access` - POST (verify 6-digit access code)
   - `/api/bookings` - GET (list), POST (create)
   - `/api/bookings/:id` - PATCH (update)
   - `/api/service-requests` - GET (list), POST (create)
   - `/api/service-requests/:id` - PATCH (update)
+  
+**Pedestal Security Architecture**:
+  - All pedestal API responses exclude accessCode field (never sent to clients)
+  - PATCH /api/pedestals/:id validates requests with strict Zod schema (only waterEnabled/electricityEnabled allowed)
+  - Storage layer filters out immutable fields (accessCode, berthNumber, id) as defense-in-depth
+  - Server-side verifiedAccess Map tracks authorization (userId -> Set<pedestalId>)
+  - Users must POST to /verify-access with correct code before controlling pedestal services
 
 **Data Validation**: Zod schemas with Drizzle integration
 - Schema definitions provide type safety and runtime validation
@@ -95,9 +120,12 @@ Preferred communication style: Simple, everyday language.
    - Passwords and authentication managed by Supabase
    - Email confirmation required for new signups (configurable in Supabase dashboard)
 
-2. **Pedestals**: Smart utility distribution points
-   - Fields: berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY
+2. **Pedestals**: Smart utility distribution points with secure access control
+   - Fields: berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY, accessCode
    - Represents physical pedestal units at marina berths
+   - **Security**: accessCode field (6-digit code) never returned in API responses
+   - **Access Control**: Users must verify access code via POST /api/pedestals/:id/verify-access before controlling services
+   - **Authorization**: Server-side verifiedAccess Map tracks which users have unlocked which pedestals
 
 3. **Bookings**: Berth reservations with utility requirements
    - Fields: userId, pedestalId, startDate, endDate, needsWater, needsElectricity, status, estimatedCost
