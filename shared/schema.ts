@@ -11,8 +11,21 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
 });
 
+// Premium marinas managed by Martek
+export const marinas = pgTable("marinas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  location: text("location").notNull(),
+  description: text("description").notNull(),
+  amenities: text("amenities").array().notNull(),
+  totalBerths: integer("total_berths").notNull(),
+  imageUrl: text("image_url"),
+  isPremium: boolean("is_premium").notNull().default(true),
+});
+
 export const pedestals = pgTable("pedestals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marinaId: varchar("marina_id").notNull(), // Reference to marina
   berthNumber: text("berth_number").notNull().unique(),
   status: text("status").notNull(), // "available", "occupied", "maintenance", "offline"
   waterEnabled: boolean("water_enabled").notNull().default(false),
@@ -52,6 +65,10 @@ export const serviceRequests = pgTable("service_requests", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 
+export const insertMarinaSchema = createInsertSchema(marinas).omit({
+  id: true,
+});
+
 export const insertPedestalSchema = createInsertSchema(pedestals).omit({
   id: true,
 });
@@ -72,6 +89,9 @@ export const insertServiceRequestSchema = createInsertSchema(serviceRequests).om
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export type InsertMarina = z.infer<typeof insertMarinaSchema>;
+export type Marina = typeof marinas.$inferSelect;
 
 export type InsertPedestal = z.infer<typeof insertPedestalSchema>;
 export type Pedestal = typeof pedestals.$inferSelect;
