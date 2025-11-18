@@ -9,15 +9,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, Calendar, Ship, Settings, LogOut } from "lucide-react";
+import { Menu, User, Calendar, Ship, Settings, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 export function TopNavBar() {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+
+  // Check if user is admin
+  const { data: currentUser } = useQuery<any>({
+    queryKey: ["/api/auth/user"],
+    enabled: !!user,
+  });
 
   const getInitials = () => {
     if (!user?.email) return "U";
@@ -91,6 +98,18 @@ export function TopNavBar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {currentUser?.isAdmin && (
+                <>
+                  <DropdownMenuItem 
+                    data-testid="menu-admin"
+                    onClick={() => setLocation("/admin")}
+                  >
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem 
                 data-testid="menu-profile"
                 onClick={() => setLocation("/profile")}

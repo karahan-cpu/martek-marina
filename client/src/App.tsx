@@ -11,6 +11,7 @@ import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
 import Profile from "@/pages/Profile";
 import Map from "@/pages/Map";
+import Admin from "@/pages/Admin";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -61,6 +62,9 @@ function Router() {
       </Route>
       <Route path="/profile">
         {() => <ProtectedRoute component={Profile} />}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={Admin} />}
       </Route>
       <Route component={NotFound} />
     </Switch>
