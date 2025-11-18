@@ -8,8 +8,6 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(), // Supabase user ID
   email: varchar("email").unique().notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const pedestals = pgTable("pedestals", {
@@ -50,10 +48,7 @@ export const serviceRequests = pgTable("service_requests", {
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserSchema = createInsertSchema(users);
 
 export const insertPedestalSchema = createInsertSchema(pedestals).omit({
   id: true,

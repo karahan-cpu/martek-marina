@@ -32,7 +32,6 @@ export async function apiRequest(
       ...authHeaders,
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -49,7 +48,6 @@ export const getQueryFn: <T>(options: {
     
     const res = await fetch(queryKey.join("/") as string, {
       headers: authHeaders,
-      credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

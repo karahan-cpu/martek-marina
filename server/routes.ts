@@ -26,7 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/pedestals", async (_req, res) => {
+  app.get("/api/pedestals", requireAuth, async (_req, res) => {
     try {
       const pedestals = await storage.getPedestals();
       res.json(pedestals);
@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/pedestals/:id", async (req, res) => {
+  app.get("/api/pedestals/:id", requireAuth, async (req, res) => {
     try {
       const pedestal = await storage.getPedestal(req.params.id);
       if (!pedestal) {
@@ -47,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/pedestals/:id", async (req, res) => {
+  app.patch("/api/pedestals/:id", requireAuth, async (req, res) => {
     try {
       const updated = await storage.updatePedestal(req.params.id, req.body);
       if (!updated) {
@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/pedestals", async (req, res) => {
+  app.post("/api/pedestals", requireAuth, async (req, res) => {
     try {
       const validatedData = insertPedestalSchema.parse(req.body);
       const pedestal = await storage.createPedestal(validatedData);
@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bookings", async (_req, res) => {
+  app.get("/api/bookings", requireAuth, async (_req, res) => {
     try {
       const bookings = await storage.getBookings();
       res.json(bookings);
@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bookings/:id", async (req, res) => {
+  app.get("/api/bookings/:id", requireAuth, async (req, res) => {
     try {
       const booking = await storage.getBooking(req.params.id);
       if (!booking) {
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bookings", async (req, res) => {
+  app.post("/api/bookings", requireAuth, async (req, res) => {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       const booking = await storage.createBooking(validatedData);
@@ -100,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/bookings/:id", async (req, res) => {
+  app.patch("/api/bookings/:id", requireAuth, async (req, res) => {
     try {
       const updated = await storage.updateBooking(req.params.id, req.body);
       if (!updated) {
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/service-requests", async (_req, res) => {
+  app.get("/api/service-requests", requireAuth, async (_req, res) => {
     try {
       const requests = await storage.getServiceRequests();
       res.json(requests);
@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/service-requests/:id", async (req, res) => {
+  app.get("/api/service-requests/:id", requireAuth, async (req, res) => {
     try {
       const request = await storage.getServiceRequest(req.params.id);
       if (!request) {
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/service-requests", async (req, res) => {
+  app.post("/api/service-requests", requireAuth, async (req, res) => {
     try {
       const validatedData = insertServiceRequestSchema.parse(req.body);
       const request = await storage.createServiceRequest(validatedData);
@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/service-requests/:id", async (req, res) => {
+  app.patch("/api/service-requests/:id", requireAuth, async (req, res) => {
     try {
       const updated = await storage.updateServiceRequest(req.params.id, req.body);
       if (!updated) {

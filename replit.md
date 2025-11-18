@@ -51,10 +51,13 @@ Preferred communication style: Simple, everyday language.
 - Middleware for request logging and JSON body parsing
 - Raw body capture for potential webhook integrations
 
-**Authentication**: Replit Auth (OpenID Connect) integration
-- Secure user authentication via OIDC protocol
-- Session management using PostgreSQL-backed session store
-- Automatic user profile creation/update on login
+**Authentication**: Supabase Auth integration (November 2025)
+- Migrated from Replit Auth to Supabase for enhanced authentication features
+- Client-side session management via Supabase client
+- JWT-based authentication with Bearer tokens
+- Email/password authentication with email confirmation requirement
+- Session stored in browser localStorage (managed by Supabase)
+- Backend JWT verification via `server/supabaseAuth.ts` middleware
 - Graceful 401 handling for unauthenticated requests
 - Landing page for logged-out users, authenticated app for logged-in users
 
@@ -62,15 +65,14 @@ Preferred communication style: Simple, everyday language.
 - Migrated from in-memory to persistent database storage (November 2025)
 - Implements IStorage interface for clean separation of concerns
 - Uses Drizzle ORM for type-safe database operations
-- Database tables: users, sessions, pedestals, bookings, serviceRequests
-- Session persistence via connect-pg-simple for Replit Auth
+- Database tables: users, pedestals, bookings, serviceRequests
+- Session management handled by Supabase (client-side)
 
 **API Endpoints**:
 - **Authentication**:
-  - `/api/login` - Initiates OIDC login flow
-  - `/api/logout` - Logs out and redirects to OIDC provider logout
-  - `/api/callback` - OIDC callback endpoint for authentication completion
-  - `/api/auth/user` - Returns current authenticated user (401 if not logged in)
+  - Client-side authentication handled by Supabase Auth SDK
+  - All API requests include `Authorization: Bearer {jwt_token}` header
+  - Backend validates JWT tokens via Supabase Admin client
 - **Data Operations**:
   - `/api/pedestals` - GET (list), POST (create)
   - `/api/pedestals/:id` - GET (single), PATCH (update)
@@ -87,10 +89,11 @@ Preferred communication style: Simple, everyday language.
 
 **Core Entities**:
 
-1. **Users**: Authenticated marina customers (populated via Replit Auth)
-   - Fields: id (OIDC sub claim), email, firstName, lastName, profileImageUrl
-   - Users are automatically created/updated on login via OIDC claims
-   - No password field - authentication handled by Replit Auth
+1. **Users**: Authenticated marina customers (managed by Supabase Auth)
+   - Fields: id (Supabase user UUID), email
+   - Users are created during signup via Supabase Auth
+   - Passwords and authentication managed by Supabase
+   - Email confirmation required for new signups (configurable in Supabase dashboard)
 
 2. **Pedestals**: Smart utility distribution points
    - Fields: berthNumber, status (available/occupied/maintenance/offline), waterEnabled, electricityEnabled, waterUsage, electricityUsage, currentUserId, locationX, locationY
@@ -114,6 +117,10 @@ Preferred communication style: Simple, everyday language.
 - Currently using in-memory storage but architected for PostgreSQL migration
 
 **Third-Party Services**:
+- **Supabase**: Authentication, user management, and session handling
+  - Project URL: https://qvgciezihmcprqoybhdx.supabase.co
+  - Client configuration: `client/src/lib/supabase.ts`
+  - Backend JWT verification: `server/supabaseAuth.ts`
 - Google Fonts CDN: Plus Jakarta Sans and DM Sans font families
 - Asset hosting: Generated images stored in `attached_assets/generated_images/`
   - Marina backgrounds (hero images), Martek logo, promotional banners
