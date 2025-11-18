@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // New endpoint: verify access by code only (no pedestal selection needed)
-  app.post("/api/pedestals/verify-by-code", requireAuth, async (req: any, res) => {
+  app.post("/api/pedestals/verify-by-code", requireAuth, async (req: any, res, next) => {
     try {
       const { accessCode } = req.body;
       const userId = req.user?.id;
@@ -180,6 +180,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid access code format" });
       }
       
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        console.error("[SECURITY] DATABASE_URL not configured");
+        if (!res.headersSent) {
+          return res.status(500).json({ 
+            error: "Database not configured. Please contact support."
+          });
+        }
+        return;
+      }
+
       // Find pedestal by access code using database query
       let pedestal;
       try {
@@ -189,7 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[SECURITY] Error details:", {
           message: dbError?.message,
           stack: dbError?.stack,
-          name: dbError?.name
+          name: dbError?.name,
+          code: dbError?.code
         });
         if (!res.headersSent) {
           return res.status(500).json({ 
@@ -271,9 +283,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("[SECURITY] Error in verify-by-code:", error);
       console.error("[SECURITY] Error stack:", error?.stack);
       if (!res.headersSent) {
-        const errorMessage = error?.message || "Failed to verify access code";
-        res.status(500).json({ error: errorMessage });
+        try {
+          const errorMessage = error?.message || "Failed to verify access code";
+          res.status(500).json({ error: errorMessage });
+        } catch (sendError) {
+          console.error("[SECURITY] Failed to send error response:", sendError);
+        }
       }
+      // Don't call next() - error is handled
     }
   });
 
