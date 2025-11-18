@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
+import { insertMarinaSchema, insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
 import { requireAuth } from "./supabaseAuth";
 import { requireAdmin } from "./adminMiddleware";
 import { z } from "zod";
@@ -34,6 +34,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Marina routes
+  app.get("/api/marinas", requireAuth, async (_req, res) => {
+    try {
+      const marinas = await storage.getMarinas();
+      res.json(marinas);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch marinas" });
+    }
+  });
+
+  app.get("/api/marinas/:id", requireAuth, async (req, res) => {
+    try {
+      const marina = await storage.getMarina(req.params.id);
+      if (!marina) {
+        return res.status(404).json({ error: "Marina not found" });
+      }
+      res.json(marina);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch marina" });
+    }
+  });
+
+  app.post("/api/marinas", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertMarinaSchema.parse(req.body);
+      const marina = await storage.createMarina(validatedData);
+      res.status(201).json(marina);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid marina data" });
+      }
+      res.status(500).json({ error: "Failed to create marina" });
+    }
+  });
+
+  app.patch("/api/marinas/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const updated = await storage.updateMarina(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Marina not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update marina" });
     }
   });
 

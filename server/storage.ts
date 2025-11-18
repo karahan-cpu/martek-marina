@@ -1,11 +1,14 @@
 // Database storage for Supabase Auth and marina application
 import {
   users,
+  marinas,
   pedestals,
   bookings,
   serviceRequests,
   type User,
   type InsertUser,
+  type Marina,
+  type InsertMarina,
   type Pedestal,
   type InsertPedestal,
   type Booking,
@@ -22,6 +25,12 @@ export interface IStorage {
   upsertUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUser(id: string, update: Partial<User>): Promise<User | undefined>;
+
+  // Marina operations
+  getMarinas(): Promise<Marina[]>;
+  getMarina(id: string): Promise<Marina | undefined>;
+  createMarina(marina: InsertMarina): Promise<Marina>;
+  updateMarina(id: string, marina: Partial<InsertMarina>): Promise<Marina | undefined>;
 
   // Pedestal operations
   getPedestals(): Promise<Pedestal[]>;
@@ -74,6 +83,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  // Marina operations
+  async getMarinas(): Promise<Marina[]> {
+    return await db.select().from(marinas);
+  }
+
+  async getMarina(id: string): Promise<Marina | undefined> {
+    const [marina] = await db.select().from(marinas).where(eq(marinas.id, id));
+    return marina;
+  }
+
+  async createMarina(insertMarina: InsertMarina): Promise<Marina> {
+    const [marina] = await db.insert(marinas).values(insertMarina).returning();
+    return marina;
+  }
+
+  async updateMarina(id: string, update: Partial<InsertMarina>): Promise<Marina | undefined> {
+    const [marina] = await db
+      .update(marinas)
+      .set(update)
+      .where(eq(marinas.id, id))
+      .returning();
+    return marina;
   }
 
   // Pedestal operations
