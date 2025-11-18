@@ -52,9 +52,13 @@ export default function Signup() {
     } else {
       toast({
         title: 'Account created!',
-        description: 'Check your email to confirm your account.',
+        description: 'If email confirmation is enabled, check your email. Otherwise, you can sign in now.',
+        duration: 5000,
       });
-      setLocation('/login');
+      // Don't redirect immediately - let user see the message
+      setTimeout(() => {
+        setLocation('/login');
+      }, 2000);
     }
     setLoading(false);
   }

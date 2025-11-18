@@ -48,11 +48,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    console.log('🔐 Signup attempt:', { email, supabaseUrl: import.meta.env.VITE_SUPABASE_URL });
+    
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
-    return { error };
+    
+    console.log('📧 Signup response:', { 
+      user: data?.user?.id, 
+      email: data?.user?.email,
+      emailConfirmed: data?.user?.email_confirmed_at,
+      hasSession: !!data?.session,
+      error: error?.message 
+    });
+    
+    if (error) {
+      console.error('❌ Signup error:', error);
+      return { error };
+    }
+    
+    // Check if user was created but needs email confirmation
+    if (data?.user) {
+      console.log('✅ User created:', data.user.id);
+      
+      // If no session, email confirmation is required
+      if (!data.session) {
+        console.log('📬 Email confirmation required - no session returned');
+        return { error: null };
+      }
+      
+      // If session exists, user is automatically confirmed
+      console.log('🎉 User auto-confirmed - session exists');
+      return { error: null };
+    }
+    
+    // No user created - this shouldn't happen if no error
+    console.warn('⚠️ No user created and no error returned');
+    return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
