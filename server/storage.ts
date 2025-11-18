@@ -55,7 +55,6 @@ export class DatabaseStorage implements IStorage {
         target: users.id,
         set: {
           email: userData.email,
-          updatedAt: new Date(),
         },
       })
       .returning();
@@ -78,9 +77,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePedestal(id: string, update: Partial<InsertPedestal>): Promise<Pedestal | undefined> {
+    // Defense in depth: Filter out immutable/sensitive fields that should never be updated
+    const { accessCode, berthNumber, id: pedestalId, ...safeUpdate } = update as any;
+    
+    if (Object.keys(safeUpdate).length === 0) {
+      // If no valid fields to update, just return current pedestal
+      return this.getPedestal(id);
+    }
+    
     const [pedestal] = await db
       .update(pedestals)
-      .set(update)
+      .set(safeUpdate)
       .where(eq(pedestals.id, id))
       .returning();
     return pedestal;

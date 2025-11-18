@@ -3,8 +3,18 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
 import { requireAuth } from "./supabaseAuth";
+import { z } from "zod";
+
+// Schema for updating pedestal service controls - ONLY allow these fields
+const updatePedestalServicesSchema = z.object({
+  waterEnabled: z.boolean().optional(),
+  electricityEnabled: z.boolean().optional(),
+}).strict(); // Reject any extra fields
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Store verified pedestal access in memory (in production, use Redis or database)
+  const verifiedAccess = new Map<string, Set<string>>(); // userId -> Set of pedestalIds
+
   // Auth route - get logged in user
   app.get('/api/auth/user', requireAuth, async (req: any, res) => {
     try {
@@ -29,7 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pedestals", requireAuth, async (_req, res) => {
     try {
       const pedestals = await storage.getPedestals();
-      res.json(pedestals);
+      // Remove access codes from response for security
+      const safePedestals = pedestals.map(({ accessCode, ...pedestal }) => pedestal);
+      res.json(safePedestals);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pedestals" });
     }
@@ -41,27 +53,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!pedestal) {
         return res.status(404).json({ error: "Pedestal not found" });
       }
-      res.json(pedestal);
+      // Remove access code from response for security
+      const { accessCode, ...safePedestal } = pedestal;
+      res.json(safePedestal);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pedestal" });
     }
   });
 
-  app.patch("/api/pedestals/:id", requireAuth, async (req, res) => {
+  app.patch("/api/pedestals/:id", requireAuth, async (req: any, res) => {
     try {
-      const updated = await storage.updatePedestal(req.params.id, req.body);
+      const userId = req.user.id;
+      const pedestalId = req.params.id;
+      
+      // Check if user has verified access to this pedestal
+      const hasAccess = verifiedAccess.get(userId)?.has(pedestalId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied. Please verify access code first." });
+      }
+      
+      // Validate and whitelist only service control fields
+      const validatedData = updatePedestalServicesSchema.parse(req.body);
+      
+      const updated = await storage.updatePedestal(pedestalId, validatedData);
       if (!updated) {
         return res.status(404).json({ error: "Pedestal not found" });
       }
-      res.json(updated);
-    } catch (error) {
+      
+      // Remove access code from response
+      const { accessCode, ...safeUpdated } = updated;
+      res.json(safeUpdated);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid update data. Only water and electricity controls allowed." });
+      }
       res.status(500).json({ error: "Failed to update pedestal" });
     }
   });
 
-  app.post("/api/pedestals/:id/verify-access", requireAuth, async (req, res) => {
+  app.post("/api/pedestals/:id/verify-access", requireAuth, async (req: any, res) => {
     try {
       const { accessCode } = req.body;
+      
+      // Validate input
+      if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
+        return res.status(400).json({ error: "Invalid access code format" });
+      }
+      
       const pedestal = await storage.getPedestal(req.params.id);
       
       if (!pedestal) {
@@ -72,7 +110,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid access code" });
       }
       
-      res.json({ verified: true, pedestal });
+      // Store verified access for this user
+      const userId = req.user.id;
+      if (!verifiedAccess.has(userId)) {
+        verifiedAccess.set(userId, new Set());
+      }
+      verifiedAccess.get(userId)!.add(req.params.id);
+      
+      // Return success without exposing access code
+      const { accessCode: _, ...safePedestal } = pedestal;
+      res.json({ verified: true, pedestal: safePedestal });
     } catch (error) {
       res.status(500).json({ error: "Failed to verify access code" });
     }

@@ -3,10 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, QrCode, Keyboard } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import QRCode from "qrcode";
 import type { Pedestal } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -24,32 +22,14 @@ export function PedestalUnlockDialog({
   onUnlocked,
 }: PedestalUnlockDialogProps) {
   const [accessCode, setAccessCode] = useState("");
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (pedestal && open) {
-      generateQRCode(pedestal.accessCode);
+    if (open) {
       setAccessCode("");
     }
-  }, [pedestal, open]);
-
-  const generateQRCode = async (code: string) => {
-    try {
-      const url = await QRCode.toDataURL(code, {
-        width: 256,
-        margin: 2,
-        color: {
-          dark: "#1e40af",
-          light: "#ffffff",
-        },
-      });
-      setQrCodeUrl(url);
-    } catch (error) {
-      console.error("Error generating QR code:", error);
-    }
-  };
+  }, [open]);
 
   const handleVerifyCode = async () => {
     if (!pedestal || !accessCode) return;
@@ -98,75 +78,39 @@ export function PedestalUnlockDialog({
             Unlock Berth {pedestal?.berthNumber}
           </DialogTitle>
           <DialogDescription>
-            Scan the QR code or enter the access code to control this pedestal
+            Enter your access code to control water and electricity utilities
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="qr" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="qr" data-testid="tab-qr-code">
-              <QrCode className="w-4 h-4 mr-2" />
-              QR Code
-            </TabsTrigger>
-            <TabsTrigger value="manual" data-testid="tab-manual-entry">
-              <Keyboard className="w-4 h-4 mr-2" />
-              Manual Entry
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="access-code">Access Code</Label>
+            <Input
+              id="access-code"
+              type="text"
+              placeholder="Enter 6-digit code"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              onKeyPress={handleKeyPress}
+              maxLength={6}
+              className="text-center text-lg tracking-widest font-mono"
+              data-testid="input-access-code"
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">
+              Find your access code on your booking confirmation or berth assignment email
+            </p>
+          </div>
 
-          <TabsContent value="qr" className="space-y-4">
-            <div className="flex flex-col items-center justify-center py-6 space-y-4">
-              {qrCodeUrl && (
-                <div className="p-4 bg-white rounded-lg border-2 border-primary">
-                  <img
-                    src={qrCodeUrl}
-                    alt="Pedestal QR Code"
-                    className="w-64 h-64"
-                    data-testid="img-qr-code"
-                  />
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground text-center max-w-xs">
-                Scan this QR code with your marina access app to unlock utilities
-              </p>
-              <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
-                Code: {pedestal?.accessCode}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="manual" className="space-y-4">
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="access-code">Access Code</Label>
-                <Input
-                  id="access-code"
-                  type="text"
-                  placeholder="Enter 6-digit code"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  maxLength={8}
-                  className="text-center text-lg tracking-widest font-mono"
-                  data-testid="input-access-code"
-                  autoFocus
-                />
-                <p className="text-xs text-muted-foreground">
-                  Find your access code on your booking confirmation or berth assignment
-                </p>
-              </div>
-
-              <Button
-                onClick={handleVerifyCode}
-                disabled={accessCode.length < 6 || isVerifying}
-                className="w-full"
-                data-testid="button-verify-code"
-              >
-                {isVerifying ? "Verifying..." : "Unlock Pedestal"}
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+          <Button
+            onClick={handleVerifyCode}
+            disabled={accessCode.length !== 6 || isVerifying}
+            className="w-full"
+            data-testid="button-verify-code"
+          >
+            {isVerifying ? "Verifying..." : "Unlock Pedestal"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

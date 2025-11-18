@@ -55,15 +55,15 @@ export function TopNavBar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
-            <Link key={item.path} href={item.path}>
-              <Button
-                variant={isActive(item.path) ? "secondary" : "ghost"}
-                className="text-base font-medium"
-                data-testid={`link-${item.label.toLowerCase().replace(" ", "-")}`}
-              >
-                {item.label}
-              </Button>
-            </Link>
+            <Button
+              key={item.path}
+              variant={isActive(item.path) ? "secondary" : "ghost"}
+              className="text-base font-medium"
+              onClick={() => setLocation(item.path)}
+              data-testid={`link-${item.label.toLowerCase().replace(" ", "-")}`}
+            >
+              {item.label}
+            </Button>
           ))}
         </div>
 
@@ -154,16 +154,18 @@ export function TopNavBar() {
               {/* Mobile Nav Links */}
               <div className="flex flex-col gap-1">
                 {navItems.map((item) => (
-                  <Link key={item.path} href={item.path}>
-                    <Button
-                      variant={isActive(item.path) ? "secondary" : "ghost"}
-                      className="w-full justify-start text-base font-medium h-12"
-                      onClick={() => setMobileMenuOpen(false)}
-                      data-testid={`mobile-link-${item.label.toLowerCase().replace(" ", "-")}`}
-                    >
-                      {item.label}
-                    </Button>
-                  </Link>
+                  <Button
+                    key={item.path}
+                    variant={isActive(item.path) ? "secondary" : "ghost"}
+                    className="w-full justify-start text-base font-medium h-12"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setLocation(item.path);
+                    }}
+                    data-testid={`mobile-link-${item.label.toLowerCase().replace(" ", "-")}`}
+                  >
+                    {item.label}
+                  </Button>
                 ))}
               </div>
 
