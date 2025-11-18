@@ -39,6 +39,7 @@ export function TopNavBar() {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Marinas", path: "/marinas" },
+    { label: "Pedestals", path: "/pedestals" },
     { label: "My Bookings", path: "/bookings" },
     { label: "Services", path: "/services" },
   ];
