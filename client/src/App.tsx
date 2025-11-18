@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
+import Marinas from "@/pages/Marinas";
 import Pedestals from "@/pages/Pedestals";
 import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
@@ -46,7 +47,7 @@ function Router() {
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
       <Route path="/marinas">
-        {() => <ProtectedRoute component={Pedestals} />}
+        {() => <ProtectedRoute component={Marinas} />}
       </Route>
       <Route path="/pedestals">
         {() => <ProtectedRoute component={Pedestals} />}
