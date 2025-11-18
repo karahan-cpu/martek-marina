@@ -126,9 +126,9 @@ export default function Signup() {
           <div className="mt-4 text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
             <Link href="/login">
-              <a className="text-primary hover:underline font-medium" data-testid="link-login">
+              <span className="text-primary hover:underline font-medium cursor-pointer" data-testid="link-login">
                 Sign in
-              </a>
+              </span>
             </Link>
           </div>
         </CardContent>

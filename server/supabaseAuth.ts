@@ -14,6 +14,10 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
   : null;
 
 export const requireAuth: RequestHandler = async (req, res, next) => {
+  if (!supabaseAdmin) {
+    return res.status(500).json({ message: 'Authentication not configured' });
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
