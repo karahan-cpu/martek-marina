@@ -169,7 +169,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pedestals/verify-by-code", requireAuth, async (req: any, res) => {
     try {
       const { accessCode } = req.body;
-      const userId = req.user.id;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
       
       // Validate input
       if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
@@ -182,19 +186,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pedestal = await storage.getPedestalByAccessCode(accessCode);
       } catch (dbError: any) {
         console.error("[SECURITY] Database error in verify-by-code:", dbError);
-        return res.status(500).json({ error: "Database error. Please try again." });
+        console.error("[SECURITY] Error details:", {
+          message: dbError?.message,
+          stack: dbError?.stack,
+          name: dbError?.name
+        });
+        if (!res.headersSent) {
+          return res.status(500).json({ 
+            error: "Database error. Please try again.",
+            details: process.env.NODE_ENV === 'development' ? dbError?.message : undefined
+          });
+        }
+        return;
       }
       
       if (!pedestal) {
         // Don't reveal that the code doesn't exist - just return generic error
-        return res.status(404).json({ error: "Invalid access code" });
+        if (!res.headersSent) {
+          return res.status(404).json({ error: "Invalid access code" });
+        }
+        return;
       }
       
       const pedestalId = pedestal.id;
       
       // Check rate limiting from database
       const now = Date.now();
-      let attempt = await storage.getVerificationAttempt(userId, pedestalId);
+      let attempt;
+      try {
+        attempt = await storage.getVerificationAttempt(userId, pedestalId);
+      } catch (attemptError: any) {
+        console.error("[SECURITY] Error checking verification attempt:", attemptError);
+        // Continue without rate limiting if database check fails
+        attempt = null;
+      }
       
       // Check if currently locked out
       if (attempt?.lockoutUntil) {
@@ -210,18 +235,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           console.warn(`[SECURITY] User ${userId} locked out for pedestal ${pedestalId}. ${timeMsg} remaining.`);
-          return res.status(429).json({ 
-            error: `Too many failed attempts. Please try again in ${timeMsg}.` 
-          });
+          if (!res.headersSent) {
+            return res.status(429).json({ 
+              error: `Too many failed attempts. Please try again in ${timeMsg}.` 
+            });
+          }
+          return;
         }
       }
       
       // Success - clear failed attempts and grant access
-      if (attempt) {
-        console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} after ${attempt.totalFailed} previous failed attempts`);
-        await storage.deleteVerificationAttempt(userId, pedestalId);
-      } else {
-        console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} on first try`);
+      try {
+        if (attempt) {
+          console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} after ${attempt.totalFailed} previous failed attempts`);
+          await storage.deleteVerificationAttempt(userId, pedestalId);
+        } else {
+          console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} on first try`);
+        }
+      } catch (cleanupError: any) {
+        console.error("[SECURITY] Error cleaning up verification attempt:", cleanupError);
+        // Continue even if cleanup fails
       }
       
       if (!verifiedAccess.has(userId)) {
@@ -231,11 +264,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return success without exposing access code
       const { accessCode: _, ...safePedestal } = pedestal;
-      res.json({ verified: true, pedestal: safePedestal });
+      if (!res.headersSent) {
+        res.json({ verified: true, pedestal: safePedestal });
+      }
     } catch (error: any) {
       console.error("[SECURITY] Error in verify-by-code:", error);
-      const errorMessage = error?.message || "Failed to verify access code";
-      res.status(500).json({ error: errorMessage });
+      console.error("[SECURITY] Error stack:", error?.stack);
+      if (!res.headersSent) {
+        const errorMessage = error?.message || "Failed to verify access code";
+        res.status(500).json({ error: errorMessage });
+      }
     }
   });
 
