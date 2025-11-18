@@ -3,33 +3,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, KeyRound, X, ArrowLeft } from "lucide-react";
+import { Camera, KeyRound, X } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Pedestal } from "@shared/schema";
-import { Badge } from "@/components/ui/badge";
 
 interface PedestalAccessEntryProps {
   onAccessGranted: (pedestal: Pedestal) => void;
 }
 
 export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProps) {
-  const [mode, setMode] = useState<"choose" | "qr" | "manual" | "select-pedestal">("choose");
+  const [mode, setMode] = useState<"choose" | "qr" | "manual">("choose");
   const [manualCode, setManualCode] = useState("");
-  const [selectedPedestalId, setSelectedPedestalId] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
 
-  const { data: pedestals } = useQuery<Pedestal[]>({
-    queryKey: ["/api/pedestals"],
-  });
-
   const verifyAccessMutation = useMutation({
-    mutationFn: async ({ pedestalId, code }: { pedestalId: string; code: string }) => {
-      return apiRequest("POST", `/api/pedestals/${pedestalId}/verify-access`, { accessCode: code });
+    mutationFn: async ({ code }: { code: string }) => {
+      return apiRequest("POST", `/api/pedestals/verify-by-code`, { accessCode: code });
     },
     onSuccess: (data: any) => {
       const pedestal = data.pedestal;
@@ -39,10 +33,11 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
       });
       onAccessGranted(pedestal);
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.message || error?.error || "Invalid access code. Please try again.";
       toast({
         title: "Access Denied",
-        description: "Invalid access code. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -93,11 +88,17 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
   const handleQRCodeScanned = async (code: string) => {
     await stopQRScanner();
     
-    // QR code should contain pedestal ID and access code in format: pedestalId:accessCode
+    // QR code can contain either:
+    // 1. pedestalId:accessCode format (legacy)
+    // 2. Just the 6-digit access code (new format)
     const parts = code.split(":");
     if (parts.length === 2) {
+      // Legacy format: pedestalId:accessCode
       const [pedestalId, accessCode] = parts;
-      verifyAccessMutation.mutate({ pedestalId, code: accessCode });
+      verifyAccessMutation.mutate({ code: accessCode });
+    } else if (code.length === 6 && /^\d+$/.test(code)) {
+      // New format: just the 6-digit code
+      verifyAccessMutation.mutate({ code });
     } else {
       toast({
         title: "Invalid QR Code",
@@ -120,16 +121,7 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
       return;
     }
 
-    if (!selectedPedestalId) {
-      toast({
-        title: "No Pedestal Selected",
-        description: "Please select a pedestal first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    verifyAccessMutation.mutate({ pedestalId: selectedPedestalId, code: manualCode });
+    verifyAccessMutation.mutate({ code: manualCode });
   };
 
   useEffect(() => {
@@ -166,7 +158,7 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
               size="lg"
               variant="outline"
               className="w-full h-24 text-lg"
-              onClick={() => setMode("select-pedestal")}
+              onClick={() => setMode("manual")}
               data-testid="button-manual-code"
             >
               <KeyRound className="w-8 h-8 mr-3" />
@@ -212,7 +204,7 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
               className="w-full mt-4"
               onClick={() => {
                 stopQRScanner();
-                setMode("select-pedestal");
+                setMode("manual");
               }}
               data-testid="button-switch-to-manual"
             >
@@ -224,57 +216,6 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
     );
   }
 
-  if (mode === "select-pedestal") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle data-testid="text-select-pedestal-title">Select Your Pedestal</CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMode("choose")}
-                data-testid="button-back-to-choose"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-            <CardDescription>
-              Choose which pedestal you want to access
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 max-h-96 overflow-y-auto">
-            {pedestals?.map((pedestal) => (
-              <Button
-                key={pedestal.id}
-                variant="outline"
-                className="w-full justify-start h-auto py-3"
-                onClick={() => {
-                  setSelectedPedestalId(pedestal.id);
-                  setMode("manual");
-                }}
-                data-testid={`button-select-pedestal-${pedestal.id}`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="text-left">
-                    <p className="font-semibold">Berth {pedestal.berthNumber}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {pedestal.status === "available" ? "Available" : "In Use"}
-                    </p>
-                  </div>
-                  <Badge variant="outline">{pedestal.status}</Badge>
-                </div>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const selectedPedestal = pedestals?.find(p => p.id === selectedPedestalId);
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -285,16 +226,16 @@ export function PedestalAccessEntry({ onAccessGranted }: PedestalAccessEntryProp
               variant="ghost"
               size="icon"
               onClick={() => {
-                setMode("select-pedestal");
+                setMode("choose");
                 setManualCode("");
               }}
-              data-testid="button-back-to-select"
+              data-testid="button-back-to-choose"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
           <CardDescription>
-            Enter the 6-digit code for <strong>Berth {selectedPedestal?.berthNumber}</strong>
+            Enter the 6-digit access code from your pedestal
           </CardDescription>
         </CardHeader>
         <CardContent>
