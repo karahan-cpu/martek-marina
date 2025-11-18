@@ -127,6 +127,11 @@ export class DatabaseStorage implements IStorage {
     return pedestal;
   }
 
+  async getPedestalByAccessCode(accessCode: string): Promise<Pedestal | undefined> {
+    const [pedestal] = await db.select().from(pedestals).where(eq(pedestals.accessCode, accessCode));
+    return pedestal;
+  }
+
   async createPedestal(insertPedestal: InsertPedestal): Promise<Pedestal> {
     const [pedestal] = await db.insert(pedestals).values(insertPedestal).returning();
     return pedestal;

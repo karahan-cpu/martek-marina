@@ -176,9 +176,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid access code format" });
       }
       
-      // Find pedestal by access code
-      const allPedestals = await storage.getPedestals();
-      const pedestal = allPedestals.find(p => p.accessCode === accessCode);
+      // Find pedestal by access code using database query
+      let pedestal;
+      try {
+        pedestal = await storage.getPedestalByAccessCode(accessCode);
+      } catch (dbError: any) {
+        console.error("[SECURITY] Database error in verify-by-code:", dbError);
+        return res.status(500).json({ error: "Database error. Please try again." });
+      }
       
       if (!pedestal) {
         // Don't reveal that the code doesn't exist - just return generic error
@@ -227,9 +232,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return success without exposing access code
       const { accessCode: _, ...safePedestal } = pedestal;
       res.json({ verified: true, pedestal: safePedestal });
-    } catch (error) {
+    } catch (error: any) {
       console.error("[SECURITY] Error in verify-by-code:", error);
-      res.status(500).json({ error: "Failed to verify access code" });
+      const errorMessage = error?.message || "Failed to verify access code";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
