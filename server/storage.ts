@@ -128,6 +128,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPedestalByAccessCode(accessCode: string): Promise<Pedestal | undefined> {
+    if (!db) {
+      throw new Error("Database not configured. DATABASE_URL is required.");
+    }
     const [pedestal] = await db.select().from(pedestals).where(eq(pedestals.accessCode, accessCode));
     return pedestal;
   }
