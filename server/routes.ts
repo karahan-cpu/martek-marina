@@ -167,74 +167,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // New endpoint: verify access by code only (no pedestal selection needed)
   app.post("/api/pedestals/verify-by-code", requireAuth, async (req: any, res) => {
-    const { accessCode } = req.body;
-    const userId = req.user?.id;
-    
-    // Validate auth
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Validate input
-    if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
-      return res.status(400).json({ error: "Invalid access code format" });
-    }
-    
-    // Find pedestal by access code
-    let pedestal;
     try {
-      pedestal = await storage.getPedestalByAccessCode(accessCode);
-    } catch (dbError: any) {
-      console.error("[ERROR] Database error:", dbError?.message);
-      return res.status(500).json({ 
-        error: "Service temporarily unavailable. Please try again.",
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+
+      const { accessCode } = req.body;
+      const userId = req.user?.id;
+      
+      // Validate auth
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Validate input
+      if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
+        return res.status(400).json({ error: "Invalid access code format" });
+      }
+      
+      // Check database availability
+      if (!process.env.DATABASE_URL) {
+        console.error("[ERROR] DATABASE_URL not configured");
+        return res.status(503).json({ 
+          error: "Service unavailable. Database not configured." 
+        });
+      }
+      
+      // Find pedestal by access code
+      let pedestal;
+      try {
+        pedestal = await storage.getPedestalByAccessCode(accessCode);
+      } catch (dbError: any) {
+        console.error("[ERROR] Database query failed:", {
+          message: dbError?.message,
+          code: dbError?.code,
+          name: dbError?.name
+        });
+        return res.status(500).json({ 
+          error: "Service temporarily unavailable. Please try again.",
+        });
+      }
+      
+      if (!pedestal) {
+        return res.status(404).json({ error: "Invalid access code" });
+      }
+      
+      const pedestalId = pedestal.id;
+      
+      // Check rate limiting (optional - continue if it fails)
+      let attempt = null;
+      try {
+        attempt = await storage.getVerificationAttempt(userId, pedestalId);
+      } catch (e: any) {
+        console.warn("[WARN] Rate limiting check failed:", e?.message);
+        // Continue without rate limiting
+      }
+      
+      // Check lockout
+      if (attempt?.lockoutUntil) {
+        try {
+          const lockoutTime = new Date(attempt.lockoutUntil).getTime();
+          if (Date.now() < lockoutTime) {
+            const remainingMs = lockoutTime - Date.now();
+            const remainingMinutes = Math.ceil(remainingMs / 60000);
+            return res.status(429).json({ 
+              error: `Too many failed attempts. Try again in ${remainingMinutes} minute(s).` 
+            });
+          }
+        } catch (e) {
+          // Invalid date, ignore lockout
+        }
+      }
+      
+      // Clear failed attempts (optional)
+      try {
+        if (attempt) {
+          await storage.deleteVerificationAttempt(userId, pedestalId);
+        }
+      } catch (e: any) {
+        console.warn("[WARN] Cleanup failed:", e?.message);
+        // Continue even if cleanup fails
+      }
+      
+      // Grant access
+      if (!verifiedAccess.has(userId)) {
+        verifiedAccess.set(userId, new Set());
+      }
+      verifiedAccess.get(userId)!.add(pedestalId);
+      
+      // Return success
+      const { accessCode: _, ...safePedestal } = pedestal;
+      return res.json({ verified: true, pedestal: safePedestal });
+      
+    } catch (error: any) {
+      // Catch-all error handler
+      console.error("[ERROR] Unexpected error in verify-by-code:", {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
       });
-    }
-    
-    if (!pedestal) {
-      return res.status(404).json({ error: "Invalid access code" });
-    }
-    
-    const pedestalId = pedestal.id;
-    
-    // Check rate limiting (optional - continue if it fails)
-    let attempt = null;
-    try {
-      attempt = await storage.getVerificationAttempt(userId, pedestalId);
-    } catch (e) {
-      // Ignore rate limiting errors
-    }
-    
-    // Check lockout
-    if (attempt?.lockoutUntil) {
-      const lockoutTime = new Date(attempt.lockoutUntil).getTime();
-      if (Date.now() < lockoutTime) {
-        const remainingMs = lockoutTime - Date.now();
-        const remainingMinutes = Math.ceil(remainingMs / 60000);
-        return res.status(429).json({ 
-          error: `Too many failed attempts. Try again in ${remainingMinutes} minute(s).` 
+      
+      if (!res.headersSent) {
+        return res.status(500).json({ 
+          error: "An unexpected error occurred. Please try again." 
         });
       }
     }
-    
-    // Clear failed attempts (optional)
-    try {
-      if (attempt) {
-        await storage.deleteVerificationAttempt(userId, pedestalId);
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-    
-    // Grant access
-    if (!verifiedAccess.has(userId)) {
-      verifiedAccess.set(userId, new Set());
-    }
-    verifiedAccess.get(userId)!.add(pedestalId);
-    
-    // Return success
-    const { accessCode: _, ...safePedestal } = pedestal;
-    res.json({ verified: true, pedestal: safePedestal });
   });
 
   app.post("/api/pedestals/:id/verify-access", requireAuth, async (req: any, res) => {
