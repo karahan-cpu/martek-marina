@@ -62,11 +62,13 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations (required for Supabase Auth)
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async upsertUser(userData: InsertUser): Promise<User> {
+    if (!db) throw new Error("Database not initialized");
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -81,10 +83,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
+    if (!db) return [];
     return await db.select().from(users);
   }
 
   async updateUser(id: string, update: Partial<User>): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [user] = await db
       .update(users)
       .set(update)
@@ -95,20 +99,24 @@ export class DatabaseStorage implements IStorage {
 
   // Marina operations
   async getMarinas(): Promise<Marina[]> {
+    if (!db) return [];
     return await db.select().from(marinas);
   }
 
   async getMarina(id: string): Promise<Marina | undefined> {
+    if (!db) return undefined;
     const [marina] = await db.select().from(marinas).where(eq(marinas.id, id));
     return marina;
   }
 
   async createMarina(insertMarina: InsertMarina): Promise<Marina> {
+    if (!db) throw new Error("Database not initialized");
     const [marina] = await db.insert(marinas).values(insertMarina).returning();
     return marina;
   }
 
   async updateMarina(id: string, update: Partial<InsertMarina>): Promise<Marina | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [marina] = await db
       .update(marinas)
       .set(update)
@@ -119,36 +127,38 @@ export class DatabaseStorage implements IStorage {
 
   // Pedestal operations
   async getPedestals(): Promise<Pedestal[]> {
+    if (!db) return [];
     return await db.select().from(pedestals);
   }
 
   async getPedestal(id: string): Promise<Pedestal | undefined> {
+    if (!db) return undefined;
     const [pedestal] = await db.select().from(pedestals).where(eq(pedestals.id, id));
     return pedestal;
   }
 
   async getPedestalByAccessCode(accessCode: string): Promise<Pedestal | undefined> {
-    if (!db) {
-      throw new Error("Database not configured. DATABASE_URL is required.");
-    }
+    if (!db) return undefined;
     const [pedestal] = await db.select().from(pedestals).where(eq(pedestals.accessCode, accessCode));
     return pedestal;
   }
 
   async createPedestal(insertPedestal: InsertPedestal): Promise<Pedestal> {
+    if (!db) throw new Error("Database not initialized");
     const [pedestal] = await db.insert(pedestals).values(insertPedestal).returning();
     return pedestal;
   }
 
   async updatePedestal(id: string, update: Partial<InsertPedestal>): Promise<Pedestal | undefined> {
+    if (!db) throw new Error("Database not initialized");
     // Defense in depth: Filter out immutable/sensitive fields that should never be updated
     const { accessCode, berthNumber, id: pedestalId, ...safeUpdate } = update as any;
-    
+
     if (Object.keys(safeUpdate).length === 0) {
       // If no valid fields to update, just return current pedestal
       return this.getPedestal(id);
     }
-    
+
     const [pedestal] = await db
       .update(pedestals)
       .set(safeUpdate)
@@ -159,20 +169,24 @@ export class DatabaseStorage implements IStorage {
 
   // Booking operations
   async getBookings(): Promise<Booking[]> {
+    if (!db) return [];
     return await db.select().from(bookings);
   }
 
   async getBooking(id: string): Promise<Booking | undefined> {
+    if (!db) return undefined;
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
     return booking;
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    if (!db) throw new Error("Database not initialized");
     const [booking] = await db.insert(bookings).values(insertBooking).returning();
     return booking;
   }
 
   async updateBooking(id: string, update: Partial<InsertBooking>): Promise<Booking | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [booking] = await db
       .update(bookings)
       .set(update)
@@ -183,20 +197,24 @@ export class DatabaseStorage implements IStorage {
 
   // Service request operations
   async getServiceRequests(): Promise<ServiceRequest[]> {
+    if (!db) return [];
     return await db.select().from(serviceRequests);
   }
 
   async getServiceRequest(id: string): Promise<ServiceRequest | undefined> {
+    if (!db) return undefined;
     const [request] = await db.select().from(serviceRequests).where(eq(serviceRequests.id, id));
     return request;
   }
 
   async createServiceRequest(insertRequest: InsertServiceRequest): Promise<ServiceRequest> {
+    if (!db) throw new Error("Database not initialized");
     const [request] = await db.insert(serviceRequests).values(insertRequest).returning();
     return request;
   }
 
   async updateServiceRequest(id: string, update: Partial<InsertServiceRequest>): Promise<ServiceRequest | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [request] = await db
       .update(serviceRequests)
       .set(update)
@@ -207,6 +225,7 @@ export class DatabaseStorage implements IStorage {
 
   // Verification attempt operations (for rate limiting)
   async getVerificationAttempt(userId: string, pedestalId: string): Promise<VerificationAttempt | undefined> {
+    if (!db) return undefined;
     const [attempt] = await db
       .select()
       .from(verificationAttempts)
@@ -220,8 +239,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertVerificationAttempt(attemptData: InsertVerificationAttempt): Promise<VerificationAttempt> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getVerificationAttempt(attemptData.userId, attemptData.pedestalId);
-    
+
     if (existing) {
       // Update existing record
       const [updated] = await db
@@ -250,6 +270,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteVerificationAttempt(userId: string, pedestalId: string): Promise<void> {
+    if (!db) return;
     await db
       .delete(verificationAttempts)
       .where(

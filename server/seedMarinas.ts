@@ -4,7 +4,7 @@ import { marinas, pedestals } from "@shared/schema";
 // Seed 2 premium marinas
 export async function seedMarinas() {
   console.log("🌊 Seeding premium marinas...");
-  
+
   const marinaData = [
     {
       name: "Martek Marina İstanbul",
@@ -24,17 +24,19 @@ export async function seedMarinas() {
     },
   ];
 
+  if (!db) throw new Error("Database not initialized");
   const createdMarinas = await db.insert(marinas).values(marinaData).returning();
   console.log(`✓ Created ${createdMarinas.length} premium marinas`);
-  
+
   return createdMarinas;
 }
 
 // Seed 20 pedestals across the 2 marinas
 export async function seedPedestals() {
   console.log("⚓ Seeding pedestals...");
-  
+
   // Get the marinas first
+  if (!db) throw new Error("Database not initialized");
   const allMarinas = await db.select().from(marinas);
   if (allMarinas.length < 2) {
     throw new Error("Need 2 marinas before seeding pedestals");
@@ -73,9 +75,10 @@ export async function seedPedestals() {
     })),
   ];
 
+  if (!db) throw new Error("Database not initialized");
   const createdPedestals = await db.insert(pedestals).values(pedestalData).returning();
   console.log(`✓ Created ${createdPedestals.length} pedestals`);
-  
+
   return createdPedestals;
 }
 

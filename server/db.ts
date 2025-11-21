@@ -1,17 +1,18 @@
 // Database connection for Replit Auth
 // Reference: Replit Auth blueprint
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { neonConfig, Pool } from "@neondatabase/serverless";
-import ws from "ws";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
 import * as schema from "@shared/schema";
 
-neonConfig.webSocketConstructor = ws;
+const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+  console.warn(
+    "DATABASE_URL not set. Database features will be unavailable.",
   );
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export const db = process.env.DATABASE_URL
+  ? drizzle({ client: new Pool({ connectionString: process.env.DATABASE_URL }), schema })
+  : null;
+
