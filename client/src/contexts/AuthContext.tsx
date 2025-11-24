@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -48,12 +49,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    console.log('🔐 Signup attempt:', { 
-      email, 
+    console.log('🔐 Signup attempt:', {
+      email,
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-      hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY 
+      hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY
     });
-    
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -62,8 +63,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           emailRedirectTo: `${window.location.origin}/login`,
         },
       });
-      
-      console.log('📧 Signup response:', { 
+
+      console.log('📧 Signup response:', {
         user: data?.user ? {
           id: data.user.id,
           email: data.user.email,
@@ -73,11 +74,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         hasSession: !!data?.session,
         error: error ? { message: error.message, status: error.status } : null
       });
-      
+
       // Check if user was created but needs email confirmation
       if (data?.user) {
         console.log('✅ User created successfully:', data.user.id);
-        
+
         if (!data.session) {
           console.log('⚠️ No session - email confirmation may be required');
           // User created but email confirmation required
@@ -88,11 +89,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return { error: null };
         }
       }
-      
+
       if (error) {
         console.error('❌ Signup error:', error);
       }
-      
+
       return { error };
     } catch (err) {
       console.error('💥 Signup exception:', err);
@@ -102,18 +103,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = async (email: string, password: string) => {
     console.log('🔑 Sign in attempt:', { email });
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) {
       console.error('❌ Sign in error:', error);
     } else {
       console.log('✅ Sign in successful:', { userId: data.user?.id });
     }
-    
+
     return { error };
   };
 
@@ -127,6 +128,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle: async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      return { error };
+    },
     signOut,
   };
 

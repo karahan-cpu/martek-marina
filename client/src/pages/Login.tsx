@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import martekLogoUrl from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
+import { FcGoogle } from "react-icons/fc";
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -89,6 +90,39 @@ export default function Login() {
               data-testid="button-login"
             >
               {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                const { error } = await signInWithGoogle();
+                if (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Login Failed",
+                    description: error.message,
+                  });
+                  setLoading(false);
+                }
+              }}
+            >
+              <FcGoogle className="mr-2 h-4 w-4" />
+              Google
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
