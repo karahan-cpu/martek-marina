@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Shield, Calendar, DollarSign } from "lucide-react";
-import type { User as UserType, Booking, Pedestal } from "@shared/schema";
+import type { User as UserType, Booking, Pedestal, ServiceRequest } from "@shared/schema";
 import { format } from "date-fns";
 import adBanner from "@assets/generated_images/Marina_equipment_ad_banner_d7c1fc9b.png";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,10 @@ export default function Profile() {
 
   const { data: pedestals } = useQuery<Pedestal[]>({
     queryKey: ["/api/pedestals"],
+  });
+
+  const { data: serviceRequests } = useQuery<ServiceRequest[]>({
+    queryKey: ["/api/service-requests"],
   });
 
   const completedBookings = bookings?.filter(b => b.status === "completed") || [];
@@ -86,9 +90,9 @@ export default function Profile() {
         <Card data-testid="card-advertisement-profile">
           <CardContent className="p-0">
             <div className="relative">
-              <img 
-                src={adBanner} 
-                alt="Advertisement" 
+              <img
+                src={adBanner}
+                alt="Advertisement"
                 className="w-full h-24 object-cover rounded-lg"
               />
               <span className="absolute top-1 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-0.5 rounded">
@@ -167,13 +171,13 @@ export default function Profile() {
                 {completedBookings.map((booking) => {
                   const pedestal = pedestals?.find(p => p.id === booking.pedestalId);
                   const days = Math.ceil(
-                    (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 
+                    (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) /
                     (1000 * 60 * 60 * 24)
                   );
-                  
+
                   return (
-                    <div 
-                      key={booking.id} 
+                    <div
+                      key={booking.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
                       data-testid={`row-history-${booking.id}`}
                     >
@@ -215,13 +219,13 @@ export default function Profile() {
                 {activeBookings.map((booking) => {
                   const pedestal = pedestals?.find(p => p.id === booking.pedestalId);
                   const days = Math.ceil(
-                    (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 
+                    (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) /
                     (1000 * 60 * 60 * 24)
                   );
-                  
+
                   return (
-                    <div 
-                      key={booking.id} 
+                    <div
+                      key={booking.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
                       data-testid={`row-active-${booking.id}`}
                     >
@@ -251,6 +255,55 @@ export default function Profile() {
             </CardContent>
           </Card>
         )}
+
+        {/* Service Requests */}
+        <Card data-testid="card-service-requests">
+          <CardHeader>
+            <CardTitle>Service Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!serviceRequests?.length ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground" data-testid="text-no-service-requests">
+                  No service requests found.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {serviceRequests.map((request) => {
+                  const pedestal = pedestals?.find(p => p.id === request.pedestalId);
+
+                  return (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                      data-testid={`row-service-request-${request.id}`}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {request.requestType.charAt(0).toUpperCase() + request.requestType.slice(1)} Request
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Berth {pedestal?.berthNumber || "Unknown"} • {format(new Date(request.createdAt), "PP")}
+                        </div>
+                        {request.description && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            "{request.description}"
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={request.status === 'completed' ? 'default' : 'outline'} className="text-xs">
+                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

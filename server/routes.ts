@@ -15,7 +15,7 @@ const updatePedestalServicesSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Store verified pedestal access in memory (ephemeral session data, resets on server restart)
   const verifiedAccess = new Map<string, Set<string>>(); // userId -> Set of pedestalIds
-  
+
   // Calculate lockout duration based on failed attempts (exponential backoff)
   const calculateLockoutDuration = (failedAttempts: number): number => {
     // Exponential backoff: 5min, 15min, 1hr, 4hr, 12hr, 24hr
@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       12 * 60 * 60 * 1000, // 12 hours (10-14 attempts)
       24 * 60 * 60 * 1000  // 24 hours (15+ attempts)
     ];
-    
+
     if (failedAttempts <= 2) return durations[0];
     if (failedAttempts <= 4) return durations[1];
     if (failedAttempts <= 6) return durations[2];
@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       let user = await storage.getUser(userId);
-      
+
       // Create user if doesn't exist
       if (!user) {
         user = await storage.upsertUser({
@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: req.user.email!,
         });
       }
-      
+
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate marina update data
       const validatedData = insertMarinaSchema.partial().parse(req.body);
-      
+
       const updated = await storage.updateMarina(req.params.id, validatedData);
       if (!updated) {
         return res.status(404).json({ error: "Marina not found" });
@@ -139,21 +139,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const pedestalId = req.params.id;
-      
+
       // Check if user has verified access to this pedestal
       const hasAccess = verifiedAccess.get(userId)?.has(pedestalId);
       if (!hasAccess) {
         return res.status(403).json({ error: "Access denied. Please verify access code first." });
       }
-      
+
       // Validate and whitelist only service control fields
       const validatedData = updatePedestalServicesSchema.parse(req.body);
-      
+
       const updated = await storage.updatePedestal(pedestalId, validatedData);
       if (!updated) {
         return res.status(404).json({ error: "Pedestal not found" });
       }
-      
+
       // Remove access code from response
       const { accessCode, ...safeUpdated } = updated;
       res.json(safeUpdated);
@@ -175,25 +175,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { accessCode } = req.body;
       const userId = req.user?.id;
-      
+
       // Validate auth
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      
+
       // Validate input
       if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
         return res.status(400).json({ error: "Invalid access code format" });
       }
-      
+
       // Check database availability
       if (!process.env.DATABASE_URL) {
         console.error("[ERROR] DATABASE_URL not configured");
-        return res.status(503).json({ 
-          error: "Service unavailable. Database not configured." 
+        return res.status(503).json({
+          error: "Service unavailable. Database not configured."
         });
       }
-      
+
       // Find pedestal by access code
       let pedestal;
       try {
@@ -204,17 +204,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           code: dbError?.code,
           name: dbError?.name
         });
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: "Service temporarily unavailable. Please try again.",
         });
       }
-      
+
       if (!pedestal) {
         return res.status(404).json({ error: "Invalid access code" });
       }
-      
+
       const pedestalId = pedestal.id;
-      
+
       // Check rate limiting (optional - continue if it fails)
       let attempt = null;
       try {
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("[WARN] Rate limiting check failed:", e?.message);
         // Continue without rate limiting
       }
-      
+
       // Check lockout
       if (attempt?.lockoutUntil) {
         try {
@@ -231,15 +231,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (Date.now() < lockoutTime) {
             const remainingMs = lockoutTime - Date.now();
             const remainingMinutes = Math.ceil(remainingMs / 60000);
-            return res.status(429).json({ 
-              error: `Too many failed attempts. Try again in ${remainingMinutes} minute(s).` 
+            return res.status(429).json({
+              error: `Too many failed attempts. Try again in ${remainingMinutes} minute(s).`
             });
           }
         } catch (e) {
           // Invalid date, ignore lockout
         }
       }
-      
+
       // Clear failed attempts (optional)
       try {
         if (attempt) {
@@ -249,17 +249,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("[WARN] Cleanup failed:", e?.message);
         // Continue even if cleanup fails
       }
-      
+
       // Grant access
       if (!verifiedAccess.has(userId)) {
         verifiedAccess.set(userId, new Set());
       }
       verifiedAccess.get(userId)!.add(pedestalId);
-      
+
       // Return success
       const { accessCode: _, ...safePedestal } = pedestal;
       return res.json({ verified: true, pedestal: safePedestal });
-      
+
     } catch (error: any) {
       // Catch-all error handler
       console.error("[ERROR] Unexpected error in verify-by-code:", {
@@ -267,10 +267,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stack: error?.stack,
         name: error?.name
       });
-      
+
       if (!res.headersSent) {
-        return res.status(500).json({ 
-          error: "An unexpected error occurred. Please try again." 
+        return res.status(500).json({
+          error: "An unexpected error occurred. Please try again."
         });
       }
     }
@@ -281,16 +281,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { accessCode } = req.body;
       const userId = req.user.id;
       const pedestalId = req.params.id;
-      
+
       // Validate input
       if (!accessCode || typeof accessCode !== 'string' || accessCode.length !== 6) {
         return res.status(400).json({ error: "Invalid access code format" });
       }
-      
+
       // Check rate limiting from database
       const now = Date.now();
       let attempt = await storage.getVerificationAttempt(userId, pedestalId);
-      
+
       // Check if currently locked out
       if (attempt?.lockoutUntil) {
         const lockoutTime = new Date(attempt.lockoutUntil).getTime();
@@ -298,34 +298,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const remainingMs = lockoutTime - now;
           const remainingMinutes = Math.ceil(remainingMs / 60000);
           const remainingHours = Math.floor(remainingMs / 3600000);
-          
+
           let timeMsg = `${remainingMinutes} minute(s)`;
           if (remainingHours >= 1) {
             timeMsg = `${remainingHours} hour(s)`;
           }
-          
+
           console.warn(`[SECURITY] User ${userId} locked out for pedestal ${pedestalId}. ${timeMsg} remaining. Total failed: ${attempt.totalFailed}`);
-          return res.status(429).json({ 
-            error: `Too many failed attempts. Please try again in ${timeMsg}.` 
+          return res.status(429).json({
+            error: `Too many failed attempts. Please try again in ${timeMsg}.`
           });
         }
       }
-      
+
       const pedestal = await storage.getPedestal(pedestalId);
-      
+
       if (!pedestal) {
         return res.status(404).json({ error: "Pedestal not found" });
       }
-      
+
       // Verify access code
       if (pedestal.accessCode !== accessCode) {
         // Increment failed attempts
         const newTotalFailed = (attempt?.totalFailed || 0) + 1;
-        
+
         // Calculate progressive lockout based on total failed attempts
         const lockoutDuration = calculateLockoutDuration(newTotalFailed);
         const lockoutUntil = new Date(now + lockoutDuration);
-        
+
         // Update attempt tracking in database
         await storage.upsertVerificationAttempt({
           userId,
@@ -333,21 +333,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalFailed: newTotalFailed,
           lockoutUntil,
         });
-        
+
         const lockoutMinutes = Math.ceil(lockoutDuration / 60000);
         const lockoutHours = Math.floor(lockoutDuration / 3600000);
         let lockoutMsg = `${lockoutMinutes} minute(s)`;
         if (lockoutHours >= 1) {
           lockoutMsg = `${lockoutHours} hour(s)`;
         }
-        
+
         console.warn(`[SECURITY] Failed attempt #${newTotalFailed} by user ${userId} for pedestal ${pedestalId}. Locked out for ${lockoutMsg}.`);
-        
-        return res.status(429).json({ 
-          error: `Invalid access code. Your access is locked for ${lockoutMsg} due to repeated failed attempts.` 
+
+        return res.status(429).json({
+          error: `Invalid access code. Your access is locked for ${lockoutMsg} due to repeated failed attempts.`
         });
       }
-      
+
       // Success - clear failed attempts and grant access
       if (attempt) {
         console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} after ${attempt.totalFailed} previous failed attempts`);
@@ -355,12 +355,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.log(`[SECURITY] User ${userId} successfully verified access to pedestal ${pedestalId} on first try`);
       }
-      
+
       if (!verifiedAccess.has(userId)) {
         verifiedAccess.set(userId, new Set());
       }
       verifiedAccess.get(userId)!.add(pedestalId);
-      
+
       // Return success without exposing access code
       const { accessCode: _, ...safePedestal } = pedestal;
       res.json({ verified: true, pedestal: safePedestal });
@@ -380,9 +380,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bookings", requireAuth, async (_req, res) => {
+  app.get("/api/bookings", requireAuth, async (req: any, res) => {
     try {
-      const bookings = await storage.getBookings();
+      const bookings = await storage.getBookingsByUserId(req.user.id);
       res.json(bookings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch bookings" });
@@ -423,9 +423,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/service-requests", requireAuth, async (_req, res) => {
+  app.get("/api/service-requests", requireAuth, async (req: any, res) => {
     try {
-      const requests = await storage.getServiceRequests();
+      const requests = await storage.getServiceRequestsByUserId(req.user.id);
       res.json(requests);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch service requests" });

@@ -30,7 +30,7 @@ export default function Bookings() {
     queryKey: ["/api/pedestals"],
   });
 
-  const availablePedestals = pedestals?.filter(p => p.status === "available") || [];
+  const availablePedestals = (pedestals?.filter(p => p.status === "available") || []).slice(0, 5);
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -155,8 +155,8 @@ export default function Bookings() {
                 </SelectTrigger>
                 <SelectContent>
                   {availablePedestals.map((pedestal) => (
-                    <SelectItem 
-                      key={pedestal.id} 
+                    <SelectItem
+                      key={pedestal.id}
                       value={pedestal.id}
                       data-testid={`select-item-${pedestal.id}`}
                     >
@@ -235,9 +235,9 @@ export default function Bookings() {
           <Card>
             <CardContent className="p-0">
               <div className="relative">
-                <img 
-                  src={adBanner} 
-                  alt="Advertisement" 
+                <img
+                  src={adBanner}
+                  alt="Advertisement"
                   className="w-full h-16 object-cover rounded-lg"
                 />
                 <span className="absolute top-1 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-0.5 rounded">

@@ -43,12 +43,14 @@ export interface IStorage {
 
   // Booking operations
   getBookings(): Promise<Booking[]>;
+  getBookingsByUserId(userId: string): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: string, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
 
   // Service request operations
   getServiceRequests(): Promise<ServiceRequest[]>;
+  getServiceRequestsByUserId(userId: string): Promise<ServiceRequest[]>;
   getServiceRequest(id: string): Promise<ServiceRequest | undefined>;
   createServiceRequest(request: InsertServiceRequest): Promise<ServiceRequest>;
   updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest | undefined>;
@@ -173,6 +175,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(bookings);
   }
 
+  async getBookingsByUserId(userId: string): Promise<Booking[]> {
+    if (!db) return [];
+    return await db.select().from(bookings).where(eq(bookings.userId, userId));
+  }
+
   async getBooking(id: string): Promise<Booking | undefined> {
     if (!db) return undefined;
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
@@ -199,6 +206,11 @@ export class DatabaseStorage implements IStorage {
   async getServiceRequests(): Promise<ServiceRequest[]> {
     if (!db) return [];
     return await db.select().from(serviceRequests);
+  }
+
+  async getServiceRequestsByUserId(userId: string): Promise<ServiceRequest[]> {
+    if (!db) return [];
+    return await db.select().from(serviceRequests).where(eq(serviceRequests.userId, userId));
   }
 
   async getServiceRequest(id: string): Promise<ServiceRequest | undefined> {

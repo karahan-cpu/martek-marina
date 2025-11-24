@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { db } from "./db";
 import { marinas, pedestals } from "@shared/schema";
 
@@ -57,7 +58,7 @@ export async function seedPedestals() {
       currentUserId: null,
       locationX: 100 + (i % 5) * 80,
       locationY: 100 + Math.floor(i / 5) * 80,
-      accessCode: String(Math.floor(100000 + Math.random() * 900000)), // 6-digit code
+      accessCode: i === 0 ? "123456" : String(Math.floor(100000 + Math.random() * 900000)), // 6-digit code
     })),
     // Bodrum Marina - 10 pedestals (B01-B10)
     ...Array.from({ length: 10 }, (_, i) => ({
