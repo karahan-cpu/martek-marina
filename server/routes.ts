@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertMarinaSchema, insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
+import { insertMarinaSchema, insertPedestalSchema, insertServiceRequestSchema } from "@shared/schema";
 import { requireAuth } from "./supabaseAuth";
 import { requireAdmin } from "./adminMiddleware";
 import { z } from "zod";

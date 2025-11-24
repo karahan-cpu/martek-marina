@@ -8,7 +8,6 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Marinas from "@/pages/Marinas";
 import Pedestals from "@/pages/Pedestals";
-import Bookings from "@/pages/Bookings";
 import Services from "@/pages/Services";
 import Profile from "@/pages/Profile";
 import Map from "@/pages/Map";
@@ -19,15 +18,15 @@ import { TopNavBar } from "@/components/TopNavBar";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Redirect to="/login" />;
   }
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopNavBar />
@@ -54,9 +53,6 @@ function Router() {
       </Route>
       <Route path="/map">
         {() => <ProtectedRoute component={Map} />}
-      </Route>
-      <Route path="/bookings">
-        {() => <ProtectedRoute component={Bookings} />}
       </Route>
       <Route path="/services">
         {() => <ProtectedRoute component={Services} />}

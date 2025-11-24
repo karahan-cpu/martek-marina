@@ -39,7 +39,6 @@ export function TopNavBar() {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Pedestals", path: "/pedestals" },
-    { label: "My Bookings", path: "/bookings" },
     { label: "Services", path: "/services" },
   ];
 
@@ -78,8 +77,8 @@ export function TopNavBar() {
         <div className="hidden md:flex items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="relative h-12 w-12 rounded-full"
                 data-testid="button-account-menu"
               >
@@ -100,7 +99,7 @@ export function TopNavBar() {
               <DropdownMenuSeparator />
               {currentUser?.isAdmin && (
                 <>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     data-testid="menu-admin"
                     onClick={() => setLocation("/admin")}
                   >
@@ -110,26 +109,19 @@ export function TopNavBar() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 data-testid="menu-profile"
                 onClick={() => setLocation("/profile")}
               >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                data-testid="menu-bookings"
-                onClick={() => setLocation("/bookings")}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                <span>My Bookings</span>
-              </DropdownMenuItem>
               <DropdownMenuItem data-testid="menu-settings">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 data-testid="menu-logout"
                 onClick={async () => {
                   await signOut();

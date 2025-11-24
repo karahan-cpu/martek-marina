@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Ship, MapPin, Anchor, Users, Award, Shield, ArrowRight, CalendarCheck, CreditCard, Droplets, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import type { Pedestal, Booking } from "@shared/schema";
+import type { Pedestal } from "@shared/schema";
 import marinarBg from "@assets/generated_images/Marina_harbor_hero_background_a1b4edec.png";
 import martekLogo from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
 
@@ -15,17 +15,9 @@ export default function Dashboard() {
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
 
-  const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
-    queryKey: ["/api/bookings"],
-  });
-
   const { data: pedestals } = useQuery<Pedestal[]>({
     queryKey: ["/api/pedestals"],
   });
-
-  const upcomingBookings = bookings?.filter(b => 
-    b.status === "confirmed" || b.status === "pending"
-  ).slice(0, 3) || [];
 
   const availableBerthsCount = pedestals?.filter(p => p.status === "available").length || 0;
 
@@ -50,18 +42,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section 
+      <section
         className="relative h-[500px] sm:h-[550px] md:h-[600px] bg-cover bg-center flex items-center justify-center px-4"
-        style={{ 
+        style={{
           backgroundImage: `linear-gradient(rgba(0, 20, 60, 0.7), rgba(0, 40, 80, 0.5)), url(${marinarBg})`,
         }}
         data-testid="section-hero"
       >
         <div className="container mx-auto px-4 sm:px-6 text-center text-white space-y-6 sm:space-y-8">
           <div className="space-y-3 sm:space-y-4">
-            <img 
-              src={martekLogo} 
-              alt="Martek Marina" 
+            <img
+              src={martekLogo}
+              alt="Martek Marina"
               className="h-14 sm:h-16 md:h-20 mx-auto opacity-90"
               data-testid="img-martek-logo"
             />
@@ -83,7 +75,7 @@ export default function Dashboard() {
                       <MapPin className="w-4 h-4 text-primary" />
                       Marina Location
                     </label>
-                    <select 
+                    <select
                       className="w-full h-12 sm:h-14 px-3 sm:px-4 text-sm sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                       data-testid="select-marina-location"
                       value={selectedMarina}
@@ -102,14 +94,14 @@ export default function Dashboard() {
                       Dates
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                      <input 
+                      <input
                         type="date"
                         className="w-full h-12 sm:h-14 px-2 sm:px-4 text-xs sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                         data-testid="input-check-in-date"
                         value={checkInDate}
                         onChange={(e) => setCheckInDate(e.target.value)}
                       />
-                      <input 
+                      <input
                         type="date"
                         className="w-full h-12 sm:h-14 px-2 sm:px-4 text-xs sm:text-base rounded-xl border-2 bg-background text-foreground font-medium focus:ring-2 focus:ring-accent focus:border-accent"
                         data-testid="input-check-out-date"
@@ -120,117 +112,18 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <Link href="/bookings">
-                  <Button 
-                    size="lg" 
-                    className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-xl"
-                    data-testid="button-search-berths"
-                  >
-                    Search Berths
-                    <ArrowRight className="ml-2 w-4 sm:w-5 h-4 sm:h-5" />
-                  </Button>
-                </Link>
+                <Button
+                  size="lg"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-xl"
+                  data-testid="button-search-berths"
+                  disabled
+                >
+                  Search Berths
+                  <ArrowRight className="ml-2 w-4 sm:w-5 h-4 sm:h-5" />
+                </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Upcoming Bookings */}
-      <section className="py-12 sm:py-16 bg-background" data-testid="section-upcoming-bookings">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold" data-testid="text-upcoming-bookings-title">
-              Your Upcoming Bookings
-            </h2>
-            <Link href="/bookings">
-              <Button variant="outline" className="rounded-xl w-full sm:w-auto" data-testid="button-view-all-bookings">
-                View All
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-          
-          {bookingsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="border-2">
-                  <CardHeader>
-                    <div className="h-6 bg-muted animate-pulse rounded w-32" />
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="h-4 bg-muted animate-pulse rounded w-full" />
-                    <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : upcomingBookings.length === 0 ? (
-            <Card className="border-2" data-testid="card-no-bookings">
-              <CardContent className="py-16 text-center space-y-4">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                  <Calendar className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">No Upcoming Bookings</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Book your perfect berth and start your maritime journey
-                  </p>
-                  <Link href="/bookings">
-                    <Button className="rounded-xl" data-testid="button-create-first-booking">
-                      Create Your First Booking
-                      <Ship className="ml-2 w-4 h-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {upcomingBookings.map((booking) => (
-                <Card key={booking.id} className="border-2 hover-elevate" data-testid={`card-booking-${booking.id}`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl">Berth {pedestals?.find(p => p.id === booking.pedestalId)?.berthNumber || 'N/A'}</CardTitle>
-                      <Badge className={`${getStatusColor(booking.status)} text-white`} data-testid={`badge-status-${booking.id}`}>
-                        {getStatusLabel(booking.status)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span data-testid={`text-dates-${booking.id}`}>
-                        {format(new Date(booking.startDate), 'MMM d')} - {format(new Date(booking.endDate), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {booking.needsWater && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Droplets className="w-3 h-3 mr-1" />
-                          Water
-                        </Badge>
-                      )}
-                      {booking.needsElectricity && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Zap className="w-3 h-3 mr-1" />
-                          Electricity
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Cost</span>
-                        <span className="text-lg font-bold text-primary" data-testid={`text-cost-${booking.id}`}>
-                          ${(booking.estimatedCost / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 

@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey(), // Supabase user ID
   email: varchar("email").unique().notNull(),
   isAdmin: boolean("is_admin").notNull().default(false),
+  balance: integer("balance").notNull().default(0), // in cents/kurus
 });
 
 // Premium marinas managed by Martek
@@ -36,19 +37,8 @@ export const pedestals = pgTable("pedestals", {
   locationX: integer("location_x").notNull(), // for map visualization
   locationY: integer("location_y").notNull(),
   accessCode: varchar("access_code", { length: 8 }).notNull(), // 6-8 digit code for QR/manual unlock
-});
-
-export const bookings = pgTable("bookings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  pedestalId: varchar("pedestal_id").notNull(),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  needsWater: boolean("needs_water").notNull().default(true),
-  needsElectricity: boolean("needs_electricity").notNull().default(true),
-  status: text("status").notNull(), // "pending", "confirmed", "active", "completed", "cancelled"
-  estimatedCost: integer("estimated_cost").notNull(), // in cents
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  waterRate: integer("water_rate").notNull().default(50), // cents per minute
+  electricityRate: integer("electricity_rate").notNull().default(100), // cents per minute
 });
 
 export const serviceRequests = pgTable("service_requests", {
@@ -73,6 +63,15 @@ export const verificationAttempts = pgTable("verification_attempts", {
   lastAttempt: timestamp("last_attempt").notNull().default(sql`now()`),
 });
 
+export const activeSessions = pgTable("active_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  pedestalId: varchar("pedestal_id").notNull(),
+  serviceType: text("service_type").notNull(), // "water" or "electricity"
+  startTime: timestamp("start_time").notNull().default(sql`now()`),
+  lastUpdated: timestamp("last_updated").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 
@@ -86,14 +85,6 @@ export const insertPedestalSchema = createInsertSchema(pedestals).omit({
   id: true,
 });
 
-export const insertBookingSchema = createInsertSchema(bookings).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  startDate: z.union([z.string(), z.date()]).transform(val => typeof val === 'string' ? new Date(val) : val),
-  endDate: z.union([z.string(), z.date()]).transform(val => typeof val === 'string' ? new Date(val) : val),
-});
-
 export const insertServiceRequestSchema = createInsertSchema(serviceRequests).omit({
   id: true,
   createdAt: true,
@@ -103,6 +94,12 @@ export const insertVerificationAttemptSchema = createInsertSchema(verificationAt
   id: true,
   firstAttempt: true,
   lastAttempt: true,
+});
+
+export const insertActiveSessionSchema = createInsertSchema(activeSessions).omit({
+  id: true,
+  startTime: true,
+  lastUpdated: true,
 });
 
 // Types
@@ -115,11 +112,11 @@ export type Marina = typeof marinas.$inferSelect;
 export type InsertPedestal = z.infer<typeof insertPedestalSchema>;
 export type Pedestal = typeof pedestals.$inferSelect;
 
-export type InsertBooking = z.infer<typeof insertBookingSchema>;
-export type Booking = typeof bookings.$inferSelect;
-
 export type InsertServiceRequest = z.infer<typeof insertServiceRequestSchema>;
 export type ServiceRequest = typeof serviceRequests.$inferSelect;
 
 export type InsertVerificationAttempt = z.infer<typeof insertVerificationAttemptSchema>;
 export type VerificationAttempt = typeof verificationAttempts.$inferSelect;
+
+export type InsertActiveSession = z.infer<typeof insertActiveSessionSchema>;
+export type ActiveSession = typeof activeSessions.$inferSelect;
